@@ -97,6 +97,14 @@
   .src-row .cnt{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;flex:0 0 auto}
   .src-row .cnt.ok{color:var(--green);font-weight:700}
   .src-row .cnt.ko{color:#E2573F}
+  .timer{display:flex;align-items:center;gap:10px;margin:0 0 12px}
+  .timerbar{flex:1;height:6px;background:var(--panel2);border-radius:3px;overflow:hidden}
+  .timerbar i{display:block;height:100%;width:0%;background:var(--green);border-radius:3px;
+    transition:width 1s linear}
+  #lastUp{font-size:12px;color:var(--green);font-weight:800;min-width:120px;text-align:right;
+    font-variant-numeric:tabular-nums}
+  #lastUp.off{color:var(--muted)}
+  @media(prefers-reduced-motion:reduce){.timerbar i{transition:none}}
   .status{font-size:11.5px;color:var(--muted);display:flex;justify-content:space-between;gap:8px;margin-bottom:10px}
   .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:5px;
     animation:pulse 1.8s infinite}
@@ -201,7 +209,10 @@ label{margin-bottom:8px}
         <div class="card">
           <div class="status">
             <span id="feedState"><span class="dot"></span>Carico le notizie…</span>
-            <span id="lastUp"></span>
+          </div>
+          <div class="timer">
+            <div class="timerbar"><i id="timerFill"></i></div>
+            <span id="lastUp">—</span>
           </div>
           <div class="row">
             <button id="refresh">🔄 Aggiorna ora</button>
@@ -1215,7 +1226,7 @@ function mergeItems(list){
 }
 let refreshing=false;
 async function refresh(){
-  if(refreshing) return; refreshing=true;
+  if(refreshing) return; refreshing=true; tick();
   S.items=[]; S.scartate=0; drawNews();
   $('feedState').innerHTML='<span class="dot"></span>Scarico le notizie…';
   const jobs=S.feeds.map(u=>loadFeed(u).then(l=>{ if(l.length) mergeItems(l) }).catch(()=>{}));
@@ -1226,7 +1237,7 @@ async function refresh(){
     ? `<span class="dot"></span>${S.items.length} notizie da ${ok||S.feeds.length} fonti${fuori}`
     : (S.scartate? `Nessuna notizia dei top campionati (${S.scartate} scartate). Prova a togliere il filtro.`
                  : 'Nessuna notizia. Tocca 🩺 Diagnostica qui sotto per capire perché.');
-  nextAt=Date.now()+INTERVALLO;
+  nextAt=Date.now()+INTERVALLO; tick();
   drawSources();
   refreshing=false;
 }
@@ -1452,12 +1463,16 @@ $('saveFeeds').addEventListener('click',()=>{ syncFeeds(); refresh() });
 const INTERVALLO=60000;
 let nextAt=Date.now()+INTERVALLO;
 let timer=setInterval(()=>{ if(S.auto) refresh() },INTERVALLO);
-setInterval(()=>{
-  if(!S.auto){ $('lastUp').textContent='aggiornamento in pausa'; return }
-  if(refreshing){ $('lastUp').textContent='sto aggiornando…'; return }
-  const s=Math.max(0,Math.round((nextAt-Date.now())/1000));
-  $('lastUp').textContent='nuovo giro tra '+s+'s';
-},1000);
+function tick(){
+  const t=$('lastUp'), f=$('timerFill');
+  if(!S.auto){ t.textContent='in pausa'; t.classList.add('off'); f.style.width='0%'; return }
+  t.classList.remove('off');
+  if(refreshing){ t.textContent='aggiorno…'; f.style.width='100%'; return }
+  const ms=Math.max(0,nextAt-Date.now());
+  t.textContent='tra '+Math.ceil(ms/1000)+'s';
+  f.style.width=Math.round((1-ms/INTERVALLO)*100)+'%';
+}
+setInterval(tick,1000);
 $('toggleAuto').addEventListener('click',()=>{
   S.auto=!S.auto;
   $('toggleAuto').textContent=S.auto?'⏸️ Ferma auto':'▶️ Riprendi auto';
