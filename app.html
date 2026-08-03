@@ -209,6 +209,7 @@ label{margin-bottom:8px}
             <button id="diag">🩺 Diagnostica</button>
           </div>
           <p class="hint hidden" id="diagOut"></p>
+          <div class="check"><input type="checkbox" id="soloTop" checked><label for="soloTop">Solo Serie A e top campionati europei</label></div>
           <div class="field">
             <label for="q">Filtra per parola (squadra, giocatore…)</label>
             <input type="text" id="q" placeholder="es. Milan, Fabregas, rinnovo">
@@ -513,9 +514,10 @@ const DEFAULT_LOGO="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAvgAAAGmCAYAAA
 /* ============ STATO ============ */
 const GN='https://news.google.com/rss/search?hl=it&gl=IT&ceid=IT:it&q=';
 const SOURCES=[
-  {n:'Google News — calciomercato',  u:GN+encodeURIComponent('calciomercato'), on:1},
-  {n:'Google News — Serie A',        u:GN+encodeURIComponent('serie a calcio'), on:1},
-  {n:'Google News — ultim\'ora calcio', u:GN+encodeURIComponent('calcio ufficiale when:1d'), on:1},
+  {n:'Google News — mercato Serie A',   u:GN+encodeURIComponent('calciomercato serie a when:2d'), on:1},
+  {n:'Google News — Serie A',           u:GN+encodeURIComponent('serie a calcio when:1d'), on:1},
+  {n:'Google News — top campionati',    u:GN+encodeURIComponent('calciomercato "premier league" OR liga OR bundesliga OR "ligue 1" when:2d'), on:1},
+  {n:'Google News — coppe europee',     u:GN+encodeURIComponent('"champions league" OR "europa league" calcio when:2d'), on:1},
   {n:'TMW — TuttoMercatoWeb',        u:'https://www.tuttomercatoweb.com/rss', on:1},
   {n:'TMW — feed alternativo',       u:'https://feeds.tuttomercatoweb.com/rss/', on:0},
   {n:'Calciomercato.com',            u:'https://www.calciomercato.com/rss', on:1},
@@ -555,7 +557,7 @@ const S = {
   colA:'#25E35F', colB:'#FFFFFF', colBg:'#000000',
   fx:'spray', dens:1, ang:-40, scrim:0.94, seed:7,
   W:1080, H:1350,
-  feeds:[...DEFAULT_FEEDS], items:[], q:'', auto:true
+  feeds:[...DEFAULT_FEEDS], items:[], q:'', auto:true, soloTop:true, scartate:0
 };
 if(!CanvasRenderingContext2D.prototype.roundRect){
   CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){
@@ -1065,6 +1067,37 @@ function renderChips(){
 }
 function setText(t){ S.text=t; $('txt').value=t; renderChips(); syncCaption(); render(); }
 
+/* ============ FILTRO: SOLO SERIE A E TOP CAMPIONATI ============ */
+const SQUADRE = [
+ // Serie A
+ 'atalanta','bologna','cagliari','como','cremonese','fiorentina','genoa','verona','inter','juventus','juve',
+ 'lazio','lecce','milan','napoli','parma','pisa','roma','sassuolo','torino','udinese',
+ // Premier League
+ 'arsenal','aston villa','bournemouth','brentford','brighton','burnley','chelsea','crystal palace','everton',
+ 'fulham','leeds','liverpool','manchester city','manchester united','newcastle','nottingham','sunderland',
+ 'tottenham','west ham','wolverhampton','wolves',
+ // Liga
+ 'alaves','athletic bilbao','atletico madrid','barcellona','barcelona','betis','celta','elche','espanyol',
+ 'getafe','girona','levante','maiorca','mallorca','osasuna','oviedo','rayo','real madrid','real sociedad',
+ 'siviglia','sevilla','valencia','villarreal',
+ // Bundesliga
+ 'bayern','leverkusen','dortmund','eintracht','francoforte','friburgo','hoffenheim','stoccarda','lipsia',
+ 'leipzig','werder','brema','union berlino','magonza','mainz','augsburg','wolfsburg','monchengladbach',
+ 'amburgo','colonia','st. pauli','heidenheim',
+ // Ligue 1
+ 'psg','paris saint','marsiglia','monaco','lione','lille','nizza','lens','rennes','strasburgo','nantes',
+ 'tolosa','brest','auxerre','angers','le havre','metz','lorient'
+];
+const COMPETIZIONI = ['serie a','premier league','liga','bundesliga','ligue 1','champions league',
+ 'europa league','conference league','coppa italia','supercoppa','fa cup','copa del rey'];
+const RX_TOP = new RegExp('(^|[^a-zà-ù])('+
+  [...SQUADRE,...COMPETIZIONI].map(s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+
+  ')([^a-zà-ù]|$)','i');
+function daTenere(titolo){
+  if(!S.soloTop) return true;
+  return RX_TOP.test(' '+titolo.toLowerCase()+' ');
+}
+
 /* ============ FEED NOTIZIE ============ */
 const PROXIES=[
   u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
@@ -1171,7 +1204,10 @@ function mergeItems(list){
   const seen=new Set(S.items.map(i=>i.t.toLowerCase().slice(0,60)));
   list.map(normalize).forEach(i=>{
     const k=i.t.toLowerCase().slice(0,60);
-    if(i.t && !seen.has(k)){ seen.add(k); S.items.push(i) }
+    if(!i.t || seen.has(k)) return;
+    seen.add(k);
+    if(!daTenere(i.t)){ S.scartate++; return }
+    S.items.push(i);
   });
   S.items.sort((a,b)=>b.ts-a.ts);
   drawNews();
@@ -1180,15 +1216,17 @@ function mergeItems(list){
 let refreshing=false;
 async function refresh(){
   if(refreshing) return; refreshing=true;
-  S.items=[]; drawNews();
+  S.items=[]; S.scartate=0; drawNews();
   $('feedState').innerHTML='<span class="dot"></span>Scarico le notizie…';
   const jobs=S.feeds.map(u=>loadFeed(u).then(l=>{ if(l.length) mergeItems(l) }).catch(()=>{}));
   await Promise.allSettled(jobs);
   const ok=SOURCES.filter(s=>s.on&&s.count>0).length;
+  const fuori=S.soloTop&&S.scartate? ` · ${S.scartate} fuori campionato` : '';
   $('feedState').innerHTML=S.items.length
-    ? `<span class="dot"></span>${S.items.length} notizie da ${ok||S.feeds.length} fonti`
-    : 'Nessuna notizia. Tocca 🩺 Diagnostica qui sotto per capire perché.';
-  $('lastUp').textContent='agg. '+new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+    ? `<span class="dot"></span>${S.items.length} notizie da ${ok||S.feeds.length} fonti${fuori}`
+    : (S.scartate? `Nessuna notizia dei top campionati (${S.scartate} scartate). Prova a togliere il filtro.`
+                 : 'Nessuna notizia. Tocca 🩺 Diagnostica qui sotto per capire perché.');
+  nextAt=Date.now()+INTERVALLO;
   drawSources();
   refreshing=false;
 }
@@ -1411,12 +1449,21 @@ $('diag').addEventListener('click',async()=>{
     '<br><br>Se sono tutte a zero ma internet è sì, il tuo browser sta bloccando i ponti: prova ad aprire il file in Safari o Chrome normale invece che dentro un\'altra app.';
 });
 $('saveFeeds').addEventListener('click',()=>{ syncFeeds(); refresh() });
-let timer=setInterval(refresh,60000);
+const INTERVALLO=60000;
+let nextAt=Date.now()+INTERVALLO;
+let timer=setInterval(()=>{ if(S.auto) refresh() },INTERVALLO);
+setInterval(()=>{
+  if(!S.auto){ $('lastUp').textContent='aggiornamento in pausa'; return }
+  if(refreshing){ $('lastUp').textContent='sto aggiornando…'; return }
+  const s=Math.max(0,Math.round((nextAt-Date.now())/1000));
+  $('lastUp').textContent='nuovo giro tra '+s+'s';
+},1000);
 $('toggleAuto').addEventListener('click',()=>{
   S.auto=!S.auto;
   $('toggleAuto').textContent=S.auto?'⏸️ Ferma auto':'▶️ Riprendi auto';
-  clearInterval(timer); if(S.auto) timer=setInterval(refresh,60000);
+  if(S.auto){ nextAt=Date.now()+INTERVALLO; refresh() }
 });
+$('soloTop').addEventListener('change',e=>{ S.soloTop=e.target.checked; refresh() });
 
 $('dl').addEventListener('click',()=>{
   cv.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);
