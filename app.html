@@ -3,9 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Controcalcio — Telefono</title>
+<title>Controcalcio</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Controcalcio">
 <meta name="theme-color" content="#080a08">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,7 +15,7 @@
 <style>
   :root{
     --bg:#080a08; --panel:#131813; --panel2:#1b221b; --line:#2b342b;
-    --green:#25E35F; --txt:#EDF2ED; --muted:#8C9A8C;
+    --green:#05E75D; --txt:#EDF2ED; --muted:#8C9A8C;
   }
   *{box-sizing:border-box}
   html,body{margin:0;background:var(--bg);color:var(--txt);
@@ -82,6 +83,10 @@
   .item .acts{display:flex;gap:6px}
   .item .acts button{padding:7px 9px;font-size:12px;width:auto}
   .item .ago{color:var(--muted);font-weight:500;font-size:10.5px}
+  .ptabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .ptab{width:auto;flex:0 0 auto;padding:9px 14px;font-size:13px;font-weight:800;background:var(--panel2);
+    border:1px solid var(--line);border-radius:9px;color:var(--muted)}
+  .ptab.on{background:var(--green);color:#06180c;border-color:var(--green)}
   .faces{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
   .face{background:none;border:0;padding:0;width:100%;cursor:pointer;text-align:center}
   .face img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:50%;
@@ -119,68 +124,86 @@
 </style>
 
 <style>
-/* ================= VERSIONE TELEFONO ================= */
+/* ==================== APP TELEFONO ==================== */
 html{-webkit-text-size-adjust:100%}
-body{overscroll-behavior-y:contain}
+body{overscroll-behavior-y:contain;-webkit-tap-highlight-color:transparent}
+button,.filebtn,.chip,.face,.ptab,.tabs button,label{touch-action:manipulation}
+input[type=range]{touch-action:none;height:40px}
 
-/* niente zoom involontario: il doppio tocco diventa un tocco normale */
-button,.filebtn,.chip,.face,.tabs button,label,summary,a{touch-action:manipulation}
-/* trascinando un cursore non si scrolla la pagina */
-input[type=range]{touch-action:none;height:38px}
-
-.wrap{max-width:100%;padding:6px 12px 210px}
+.wrap{max-width:100%;padding:0 12px 150px}
 .grid{display:block}
-header{padding:2px 0 8px;gap:6px}
-header h1{font-size:19px}
-header p{display:none}
+header{padding:10px 2px 8px;gap:8px}
+header h1{font-size:17px}
+header p,.homehint{display:none}
 
-/* ---- anteprima fissa in alto, altezza sempre uguale ---- */
-.stage{position:sticky;top:0;z-index:6;margin:0 -12px 12px;padding:8px 12px 10px;
-  background:var(--bg);border:0;border-radius:0;border-bottom:1px solid var(--line);
-  height:calc(38vh + 18px);display:flex;align-items:center;justify-content:center}
-.stage canvas{height:38vh;width:auto;max-width:100%;border-radius:10px}
+/* ---------- anteprima ---------- */
+.stage{position:sticky;top:0;z-index:6;margin:0 -12px 14px;padding:8px 12px 10px;
+  background:linear-gradient(180deg,var(--bg) 78%,rgba(8,10,8,.88));
+  border:0;border-radius:0;height:calc(var(--ph,36vh) + 20px);
+  display:flex;align-items:center;justify-content:center;transition:height .22s ease}
+.stage canvas{height:var(--ph,36vh);width:auto;max-width:100%;border-radius:12px;
+  box-shadow:0 10px 30px rgba(0,0,0,.55)}
+body.big{--ph:60vh}
+.peek{position:absolute;right:16px;bottom:12px;background:rgba(20,26,20,.92);
+  border:1px solid var(--line);color:var(--muted);border-radius:20px;padding:5px 12px;
+  font-size:11px;font-weight:700;width:auto}
 
-/* ---- schede in basso, sopra i pulsanti ---- */
-.tabs{position:fixed;left:12px;right:12px;bottom:calc(72px + env(safe-area-inset-bottom));top:auto;
-  z-index:8;box-shadow:0 8px 26px rgba(0,0,0,.75);padding:5px}
-.tabs button{padding:13px 4px;font-size:13.5px}
-
-/* ---- pannelli a fisarmonica: una cosa per volta ---- */
-.card{padding:0;overflow:hidden;margin-bottom:10px}
-.card h2{margin:0;padding:16px 15px;display:flex;align-items:center;justify-content:space-between;
-  cursor:pointer;font-size:11.5px;letter-spacing:1.4px;color:var(--txt);
-  -webkit-user-select:none;user-select:none}
-.card h2::after{content:'';width:9px;height:9px;border-right:2px solid var(--muted);
-  border-bottom:2px solid var(--muted);transform:rotate(45deg) translate(-3px,-3px);
-  transition:transform .18s ease}
+/* ---------- pannelli a fisarmonica ---------- */
+.card{padding:0;overflow:hidden;margin-bottom:9px;border-radius:14px}
+.card h2{margin:0;padding:17px 15px;display:flex;align-items:center;justify-content:space-between;
+  font-size:12px;letter-spacing:1.2px;color:var(--txt);-webkit-user-select:none;user-select:none}
+.card h2::after{content:'';width:8px;height:8px;border-right:2px solid var(--muted);
+  border-bottom:2px solid var(--muted);transform:rotate(45deg) translate(-2px,-3px);transition:transform .2s}
 .card.open h2{color:var(--green);border-bottom:1px solid var(--line)}
-.card.open h2::after{border-color:var(--green);transform:rotate(-135deg) translate(-3px,-3px)}
-.cbody{display:none;padding:14px 15px 16px}
+.card.open h2::after{border-color:var(--green);transform:rotate(-135deg) translate(-2px,-2px)}
+.cbody{display:none;padding:15px}
 .card.open .cbody{display:block}
-@media(prefers-reduced-motion:reduce){.card h2::after{transition:none}}
+@media(prefers-reduced-motion:reduce){.card h2::after,.stage{transition:none}}
 
-/* ---- comandi più grandi e regolari ---- */
-textarea,input[type=text],select{font-size:16px;padding:13px}
-button,.filebtn{padding:14px 12px;font-size:15px}
-.row{gap:10px;margin-bottom:14px}
-.field{margin-bottom:16px}
-label{margin-bottom:8px}
-.check{margin-bottom:14px}
-.check input{width:22px;height:22px}
-.chip{padding:9px 11px;font-size:13px}
-.faces{grid-template-columns:repeat(4,1fr);gap:10px}
-.face{padding:0}
-.item .thumb{width:82px;height:82px}
-.item .acts button{padding:10px 12px;font-size:13px}
+/* ---------- comandi ---------- */
+textarea,input[type=text],select{font-size:16px;padding:14px;border-radius:12px}
+button,.filebtn{padding:14px 12px;font-size:15px;border-radius:12px}
+.row{gap:10px;margin-bottom:15px}
+.field{margin-bottom:17px}
+label{margin-bottom:9px;font-size:12.5px}
+.check{margin-bottom:15px;font-size:14px}
+.check input{width:23px;height:23px}
+.slider{gap:12px}
+.chip{padding:10px 12px;font-size:13px;border-radius:8px}
+.ptab{padding:11px 16px;font-size:14px}
+.faces{grid-template-columns:repeat(4,1fr);gap:11px}
+.face img{border-width:3px}
+.face .del{width:24px;height:24px;line-height:22px}
+.item{padding:11px;border-radius:14px}
+.item .thumb{width:80px;height:80px}
+.item .ttl{font-size:14px}
+.item .acts button{padding:11px 13px;font-size:13px}
 .srcs{max-height:none}
-.src-row{padding:11px 8px;font-size:13.5px}
+.src-row{padding:12px 8px;font-size:14px}
+.timer{margin-bottom:14px}
 
-.bar{padding:11px 12px calc(11px + env(safe-area-inset-bottom))}
-.bar button{padding:15px 12px;font-size:15px}
-.homehint{font-size:11.5px;color:var(--muted);text-align:center;padding:2px 0 12px;line-height:1.5}
+/* ---------- barra unica in basso ---------- */
+.tabs{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:9;border-radius:0;
+  border:0;border-top:1px solid var(--line);background:rgba(9,12,9,.97);
+  backdrop-filter:blur(14px);gap:4px;padding:8px 98px 8px 10px;
+  padding-bottom:calc(8px + env(safe-area-inset-bottom))}
+.tabs button{padding:11px 2px;font-size:11px;display:flex;flex-direction:column;gap:3px;
+  border-radius:12px;line-height:1.1}
+.bar{left:auto;right:10px;bottom:calc(12px + env(safe-area-inset-bottom));width:auto;
+  background:none;border:0;backdrop-filter:none;padding:0;z-index:10}
+.bar>div{display:block;width:auto;max-width:none}
+.bar #open{display:none}
+.bar #dl{width:78px;height:58px;border-radius:16px;font-size:12px;padding:0;
+  box-shadow:0 6px 20px rgba(37,227,95,.4);display:flex;flex-direction:column;gap:2px;line-height:1.1}
 
 @media(min-width:900px){
-  .tabs{position:sticky;bottom:auto;top:0;left:auto;right:auto}
+  .tabs{position:sticky;bottom:auto;top:0;padding:5px;border-radius:12px;border:1px solid var(--line)}
+  .tabs button{flex-direction:row;font-size:13px}
+  .bar{left:0;right:0;bottom:0;width:auto;background:rgba(8,10,8,.95);
+    border-top:1px solid var(--line);padding:10px 14px}
+  .bar>div{display:flex}
+  .bar #open{display:inline-flex}
+  .bar #dl{width:auto;height:auto;flex-direction:row;padding:14px}
   .stage{height:auto;display:block}
   .stage canvas{height:auto;width:100%}
 }
@@ -193,15 +216,14 @@ label{margin-bottom:8px}
     <p>Notizie live → post pronto in due tap.</p>
   </header>
 
-  <p class="homehint">Safari → Condividi → <b>Aggiungi a Home</b> per usarla come app.</p>
   <div class="grid">
     <div class="stage"><canvas id="cv" width="1080" height="1350"></canvas></div>
 
     <div>
       <div class="tabs">
-        <button class="on" data-tab="news">📰 Notizie</button>
-        <button data-tab="text">✍️ Testo</button>
-        <button data-tab="style">🎨 Stile</button>
+        <button class="on" data-tab="news"><span>📰</span><span>Notizie</span></button>
+        <button data-tab="text"><span>✍️</span><span>Testo</span></button>
+        <button data-tab="style"><span>🎨</span><span>Stile</span></button>
       </div>
 
       <!-- ================= NOTIZIE ================= -->
@@ -388,10 +410,11 @@ label{margin-bottom:8px}
           </div>
           <div class="field"><label for="bgd">Scurisci lo sfondo</label><div class="slider"><input type="range" id="bgd" min="0" max="100" value="74"><span class="val" id="bgdV">74%</span></div></div>
           </div>
+          <div id="playerTabs" class="ptabs"></div>
           <div class="row">
-            <label class="filebtn" for="photo">📷 Carica foto</label>
+            <label class="filebtn" for="photo">➕ Aggiungi un giocatore</label>
             <input type="file" id="photo" accept="image/*">
-            <button id="clearPhoto">Rimuovi</button>
+            <button id="clearPhoto">Togli questo</button>
           </div>
           <div class="field"><label for="pz">Zoom</label><div class="slider"><input type="range" id="pz" min="30" max="230" value="100"><span class="val" id="pzV">100%</span></div></div>
           <div class="row">
@@ -448,7 +471,7 @@ label{margin-bottom:8px}
             </select>
           </div>
           <div class="row">
-            <div><label for="colA">Verde / accento</label><input type="color" id="colA" value="#25E35F"></div>
+            <div><label for="colA">Verde / accento</label><input type="color" id="colA" value="#05E75D"></div>
             <div><label for="colB">Testo normale</label><input type="color" id="colB" value="#FFFFFF"></div>
             <div><label for="colBg">Sfondo</label><input type="color" id="colBg" value="#000000"></div>
           </div>
@@ -479,7 +502,16 @@ label{margin-bottom:8px}
         </div>
 
         <div class="card">
-          <h2>Formato</h2>
+          <h2>Formato e qualità</h2>
+          <div class="field">
+            <label for="qual">Qualità del file scaricato</label>
+            <select id="qual">
+              <option value="2" selected>Doppia definizione — 2160 px (consigliata)</option>
+              <option value="3">Tripla definizione — 3240 px (file pesante)</option>
+              <option value="1">Normale — 1080 px</option>
+            </select>
+          </div>
+          <label for="fmt">Formato</label>
           <select id="fmt">
             <option value="1080x1350" selected>Feed 4:5 — 1080×1350</option>
             <option value="1080x1080">Quadrato 1:1 — 1080×1080</option>
@@ -492,7 +524,7 @@ label{margin-bottom:8px}
 </div>
 
 <div class="bar"><div>
-  <button class="primary" id="dl">⬇️ Scarica post</button>
+  <button class="primary" id="dl"><span>⬇️</span><span>Scarica</span></button>
   <button id="open">Apri a schermo intero</button>
 </div></div>
 
@@ -558,16 +590,16 @@ const DEFAULT_FEEDS = SOURCES.filter(s=>s.on).map(s=>s.u);
 const S = {
   text:'', fam:'Anton', tsize:1, lead:0.90, skew:12, tup:0, align:'fill',
   badge:'', handle:'',
-  photo:null, pz:1, px:0, py:0, sat:1, con:1.05, fade:true,
-  cut:true, matte:0.5, aura:0.8, outw:0.45, outc:'a', maskSmall:null, cutC:null, silC:null, outC:null,
+  players:[], pi:0, sat:1, con:1.05, fade:true,
+  cut:true, matte:0.5, aura:0.8, outw:0.45, outc:'a',
   logo:null, lz:1, lpos:'tl', logo2:null,
   model:1, srcName:'', srcZ:1, srcMark:1,
   circle:null, person:'', cirZ:1, cirB:0.5, cirX:0, cirY:0, cirZoom:1.15,
   tweet:null, twS:0.92, twY:0, twB:0.45, twR:20,
   bg:null, bgd:0.74,
-  colA:'#25E35F', colB:'#FFFFFF', colBg:'#000000',
+  colA:'#05E75D', colB:'#FFFFFF', colBg:'#000000',
   fx:'spray', dens:1, ang:-40, scrim:0.94, seed:7,
-  W:1080, H:1350,
+  W:1080, H:1350, qual:2,
   feeds:[...DEFAULT_FEEDS], items:[], q:'', auto:true, soloTop:true, scartate:0
 };
 if(!CanvasRenderingContext2D.prototype.roundRect){
@@ -636,6 +668,7 @@ function buildFx(W,H,rgb){
   const cx=W*0.52, cy=H*0.30;
   const col=`rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
   const env=y=>Math.exp(-Math.pow((y/H-0.35)/0.225,2));
+  const K=W/1080;   // fattore di scala: tiene la vernice identica a qualsiasi risoluzione
 
   if(S.fx==='glow'){
     const rg=g.createRadialGradient(cx,cy,10,cx,cy,Math.max(W,H)*0.55);
@@ -658,13 +691,13 @@ function buildFx(W,H,rgb){
     // la sfumatura dirada gli schizzi, non li sbiadisce: cosi il verde resta pieno
     if(rnd()>env(y)*Math.max(0,1-t*0.7)) continue;
     const bold=rnd()<(streaky?0.4:0.26);
-    let len=(streaky? 340+rnd()*880 : 50+rnd()*rnd()*680)*(1-Math.min(0.55,t*0.45));
+    let len=(streaky? 340+rnd()*880 : 50+rnd()*rnd()*680)*K*(1-Math.min(0.55,t*0.45));
     if(bold) len*=1.5;
-    const w0=bold? 10+rnd()*26 : 1.5+rnd()*rnd()*13;
+    const w0=(bold? 10+rnd()*26 : 1.5+rnd()*rnd()*13)*K;
     const a0=bold? 1 : 0.78+rnd()*0.22;
     for(let s=0;s<8;s++){
       const p0=s/8,p1=(s+1)/8;
-      g.lineWidth=Math.max(0.35,w0*(1-p0*0.88));
+      g.lineWidth=Math.max(0.35*K,w0*(1-p0*0.88));
       g.globalAlpha=a0*(1-p0*0.35);
       g.beginPath();
       g.moveTo(x+dx*len*p0,y+dy*len*p0);
@@ -681,7 +714,7 @@ function buildFx(W,H,rgb){
     const t=Math.min(1.4,Math.abs(off)/(H*0.30));
     if(rnd()>env(y)*Math.max(0,1-t*0.8)) continue;
     const big=rnd()<0.02;
-    const r=(big? 4+rnd()*12 : 0.5+rnd()*rnd()*6.5)*Math.max(0.2,1-t*0.5);
+    const r=(big? 4+rnd()*12 : 0.5+rnd()*rnd()*6.5)*K*Math.max(0.2,1-t*0.5);
     const a=0.78+rnd()*0.22;
     if(r<=0.2) continue;
     g.globalAlpha=a;
@@ -691,10 +724,10 @@ function buildFx(W,H,rgb){
   tips.forEach(([tx,ty,ta])=>{
     const k=Math.round(3+rnd()*7);
     for(let i=0;i<k;i++){
-      const rr=rnd()*46, aa=rnd()*6.2832;
+      const rr=rnd()*46*K, aa=rnd()*6.2832;
       g.globalAlpha=ta*(0.55+rnd()*0.45);
       g.beginPath();
-      g.arc(tx+Math.cos(aa)*rr,ty+Math.sin(aa)*rr,0.4+rnd()*rnd()*3.4,0,6.2832);
+      g.arc(tx+Math.cos(aa)*rr,ty+Math.sin(aa)*rr,(0.4+rnd()*rnd()*3.4)*K,0,6.2832);
       g.fill();
     }
   });
@@ -758,11 +791,15 @@ async function computeMask(img){
   mc.getContext('2d').putImageData(id,0,0);
   return mc;
 }
-function tunedMask(){
-  if(!S.maskSmall) return null;
-  const w=S.maskSmall.width,h=S.maskSmall.height;
+/* ============ GIOCATORI (uno o piu) ============ */
+function nuovoGiocatore(img){ return {img,mask:null,cut:null,sil:null,out:null,z:1,x:0,y:0} }
+function giocatore(){ return S.players[S.pi]||null }
+
+function tunedMask(p){
+  if(!p||!p.mask) return null;
+  const w=p.mask.width,h=p.mask.height;
   const c=document.createElement('canvas'); c.width=w; c.height=h;
-  const g=c.getContext('2d'); g.drawImage(S.maskSmall,0,0);
+  const g=c.getContext('2d'); g.drawImage(p.mask,0,0);
   const id=g.getImageData(0,0,w,h);
   const t=60+S.matte*120, k=1.6+S.matte*2.2;
   for(let i=0;i<w*h;i++){
@@ -772,19 +809,20 @@ function tunedMask(){
   g.putImageData(id,0,0);
   return c;
 }
-function buildCutout(){
-  S.cutC=null; S.silC=null; S.outC=null;
-  if(!S.photo||!S.cut||!S.maskSmall) return;
-  const m=tunedMask(); if(!m) return;
-  const w=S.photo.width,h=S.photo.height;
+function buildCutout(p){
+  if(!p) return;
+  p.cut=null; p.sil=null; p.out=null;
+  if(!S.cut||!p.mask) return;
+  const m=tunedMask(p); if(!m) return;
+  const w=p.img.width,h=p.img.height;
   const c=document.createElement('canvas'); c.width=w; c.height=h;
   const g=c.getContext('2d');
-  g.drawImage(S.photo,0,0,w,h);
+  g.drawImage(p.img,0,0,w,h);
   g.globalCompositeOperation='destination-in';
   g.imageSmoothingQuality='high';
   g.drawImage(m,0,0,w,h);
   g.globalCompositeOperation='source-over';
-  S.cutC=c;
+  p.cut=c;
   const sil=(color)=>{
     const s=document.createElement('canvas'); s.width=w; s.height=h;
     const sg=s.getContext('2d');
@@ -792,52 +830,70 @@ function buildCutout(){
     sg.fillStyle=color; sg.fillRect(0,0,w,h);
     return s;
   };
-  S.silC=sil(S.colA);
-  S.outC=sil(S.outc==='w'?'#FFFFFF':S.outc==='k'?'#000000':S.colA);
+  p.sil=sil(S.colA);
+  p.out=sil(S.outc==='w'?'#FFFFFF':S.outc==='k'?'#000000':S.colA);
+  buildGlow(p);
 }
-async function preparePhoto(){
-  if(!S.photo) return;
-  S.maskSmall=null; buildCutout(); render();
-  if(!S.cut){ $('cutState').textContent='Scontorno spento: la foto viene usata intera.'; return }
+
+/* bagliore: la sagoma viene ricopiata tutt'intorno a raggio costante,
+   fortissima sul bordo e spenta in fretta. Si calcola una volta sola. */
+function buildGlow(p){
+  p.glow=null;
+  if(!p.sil) return;
+  const w=p.img.width, h=p.img.height;
+  const m=Math.round(Math.max(w,h)*0.045);   // tarato sul post originale: sparisce entro il 4% della figura
+  const c=document.createElement('canvas'); c.width=w+2*m; c.height=h+2*m;
+  const g=c.getContext('2d');
+  const anelli=11, direzioni=16;
+  for(let k=anelli;k>=1;k--){
+    const r=m*k/anelli;
+    g.globalAlpha=0.34*Math.exp(-4.2*(r/m));  // si dimezza a meta raggio, come nell'esempio
+    for(let d=0;d<direzioni;d++){
+      const a=d/direzioni*6.2832;
+      g.drawImage(p.sil, m+Math.cos(a)*r, m+Math.sin(a)*r, w, h);
+    }
+  }
+  g.globalAlpha=1;
+  p.glow=c; p.glowM=m;
+}
+function buildAll(){ S.players.forEach(buildCutout) }
+
+async function preparePhoto(p){
+  if(!p) return;
+  p.mask=null; buildCutout(p); render();
+  if(!S.cut){ $('cutState').textContent='Scontorno spento: le foto restano intere.'; return }
   $('cutState').textContent='Scontorno in corso…';
-  S.maskSmall=await computeMask(S.photo);
-  if(S.maskSmall){ buildCutout(); $('cutState').textContent='Giocatore scontornato. Regola i bordi se serve.'; }
+  p.mask=await computeMask(p.img);
+  buildCutout(p);
+  $('cutState').textContent=p.mask
+    ? (S.players.length>1? 'Giocatori scontornati. Ognuno ha la sua aura.' : 'Giocatore scontornato. Regola i bordi se serve.')
+    : 'Scontorno non riuscito su questa foto.';
   render();
 }
 
-/* ============ FOTO ============ */
-function photoLayer(W,H,box){
-  const img=(S.cut&&S.cutC)?S.cutC:S.photo;
-  const isCut=(S.cut&&!!S.cutC);
+/* disegno un giocatore alla volta su un suo livello, cosi la sfumatura
+   non cancella quelli accanto */
+function livelloGiocatore(p,W,H,box,slotCx,slotW){
+  const img=(S.cut&&p.cut)?p.cut:p.img;
+  const isCut=(S.cut&&!!p.cut);
   const c=document.createElement('canvas'); c.width=W; c.height=H;
   const g=c.getContext('2d');
-  const sc=Math.min(box.w/img.width,box.h/img.height)*S.pz;
+  const sc=Math.min(slotW/img.width,box.h/img.height)*p.z;
   const w=img.width*sc, h=img.height*sc;
-  const x=box.x+box.w/2-w/2+S.px*W*0.006;
-  const y=box.y+box.h-h+S.py*H*0.006;
+  const x=slotCx-w/2+p.x*W*0.006;
+  const y=box.y+box.h-h+p.y*H*0.006;
 
-  if(isCut&&S.aura>0&&S.silC){
-    // bagliore largo
-    const passes=14, e=Math.max(w,h)*0.20*S.aura;
-    for(let k=passes;k>=1;k--){
-      const gr=e*k/passes;
-      g.globalAlpha=0.21*S.aura*(1-k/(passes+1.4));
-      g.drawImage(S.silC,x-gr,y-gr,w+gr*2,h+gr*2);
-    }
-    // bordo luminoso attaccato alla figura
-    for(let k=6;k>=1;k--){
-      const gr=Math.max(w,h)*0.016*S.aura*k/6;
-      g.globalAlpha=0.42*S.aura;
-      g.drawImage(S.silC,x-gr,y-gr,w+gr*2,h+gr*2);
-    }
+  if(isCut&&S.aura>0&&p.glow){
+    const m=p.glowM*sc;                    // il margine segue la scala del disegno
+    g.globalAlpha=Math.min(1,S.aura);
+    g.drawImage(p.glow, x-m, y-m, w+m*2, h+m*2);
     g.globalAlpha=1;
   }
-
-  if(isCut&&S.outw>0&&S.outC){
+  if(isCut&&S.outw>0&&p.out){
     const r=Math.max(w,h)*0.022*S.outw;
     g.globalAlpha=1;
-    for(let k=0;k<28;k++){const a=k/28*6.2832; g.drawImage(S.outC,x+Math.cos(a)*r,y+Math.sin(a)*r,w,h)}
-    for(let k=0;k<14;k++){const a=k/14*6.2832; g.drawImage(S.outC,x+Math.cos(a)*r*0.55,y+Math.sin(a)*r*0.55,w,h)}
+    for(let k=0;k<28;k++){const a=k/28*6.2832; g.drawImage(p.out,x+Math.cos(a)*r,y+Math.sin(a)*r,w,h)}
+    for(let k=0;k<14;k++){const a=k/14*6.2832; g.drawImage(p.out,x+Math.cos(a)*r*0.55,y+Math.sin(a)*r*0.55,w,h)}
   }
 
   g.filter=`saturate(${S.sat}) contrast(${S.con})`;
@@ -845,9 +901,10 @@ function photoLayer(W,H,box){
 
   if(S.fade){
     g.globalCompositeOperation='destination-out';
-    const gb=g.createLinearGradient(0,y+h*(isCut?0.80:0.60),0,y+h);
+    const y0=y+h*(isCut?0.80:0.60);
+    const gb=g.createLinearGradient(0,y0,0,y+h);
     gb.addColorStop(0,'rgba(0,0,0,0)'); gb.addColorStop(1,'rgba(0,0,0,1)');
-    g.fillStyle=gb; g.fillRect(0,y+h*(isCut?0.80:0.60),W,h+4);
+    g.fillStyle=gb; g.fillRect(0,y0,W,h+4);
     if(!isCut){
       const s=Math.max(w,h);
       const rg=g.createRadialGradient(x+w/2,y+h*0.45,s*0.30,x+w/2,y+h*0.45,s*0.62);
@@ -856,6 +913,17 @@ function photoLayer(W,H,box){
     }
     g.globalCompositeOperation='source-over';
   }
+  return c;
+}
+function photoLayer(W,H,box){
+  const c=document.createElement('canvas'); c.width=W; c.height=H;
+  const g=c.getContext('2d');
+  const n=S.players.length;
+  S.players.forEach((p,i)=>{
+    const slotW = n>1 ? box.w/n*1.22 : box.w;
+    const slotCx= n>1 ? box.x+box.w*((i+0.5)/n) : box.x+box.w/2;
+    g.drawImage(livelloGiocatore(p,W,H,box,slotCx,slotW),0,0);
+  });
   return c;
 }
 
@@ -891,7 +959,7 @@ function render(){
 
   ctx.drawImage(buildFx(W,H,rgb),0,0);
 
-  if(S.photo){
+  if(S.players.length){
     const box={x:W*0.05,y:H*0.03,w:W*0.90,h:Math.max(60,textTop-H*0.05)};
     ctx.drawImage(photoLayer(W,H,box),0,0);
   }
@@ -1303,9 +1371,17 @@ bindRange('tsize','tsize',v=>v+'%',v=>v/100);
 bindRange('lead','lead',v=>v+'%',v=>v/100);
 bindRange('skew','skew',v=>v+'°');
 bindRange('tup','tup',v=>v);
-bindRange('pz','pz',v=>v+'%',v=>v/100);
-bindRange('px','px',v=>v);
-bindRange('py','py',v=>v);
+function bindPlayer(id,campo,fmt,tr){
+  const el=$(id),out=$(id+'V');
+  el.addEventListener('input',()=>{
+    const p=giocatore(); if(!p) return;
+    p[campo]=tr?tr(+el.value):+el.value;
+    out.textContent=fmt(+el.value); render();
+  });
+}
+bindPlayer('pz','z',v=>v+'%',v=>v/100);
+bindPlayer('px','x',v=>v);
+bindPlayer('py','y',v=>v);
 bindRange('sat','sat',v=>v+'%',v=>v/100);
 bindRange('con','con',v=>v+'%',v=>v/100);
 bindRange('lz','lz',v=>v+'%',v=>v/100);
@@ -1317,7 +1393,7 @@ $('txt').addEventListener('input',e=>{S.text=e.target.value;renderChips();syncCa
 $('badge').addEventListener('input',e=>{S.badge=e.target.value;render()});
 $('handle').addEventListener('input',e=>{S.handle=e.target.value;syncCaption();render()});
 $('align').addEventListener('change',e=>{S.align=e.target.value;render()});
-$('colA').addEventListener('input',e=>{S.colA=e.target.value;buildCutout();render()});
+$('colA').addEventListener('input',e=>{S.colA=e.target.value;buildAll();render()});
 $('colB').addEventListener('input',e=>{S.colB=e.target.value;render()});
 $('colBg').addEventListener('input',e=>{S.colBg=e.target.value;render()});
 $('fx').addEventListener('change',e=>{S.fx=e.target.value;render()});
@@ -1326,7 +1402,7 @@ $('lpos').addEventListener('change',e=>{S.lpos=e.target.value;render()});
 $('reseed').addEventListener('click',()=>{S.seed=Math.floor(Math.random()*1e6);render()});
 const PRESET={fam:'Anton',tsize:1,lead:0.90,skew:12,tup:0,align:'fill',
   sat:1,con:1.08,fade:true,cut:true,matte:0.5,aura:0.8,outw:0.45,outc:'a',
-  colA:'#25E35F',colB:'#FFFFFF',colBg:'#000000',fx:'spray',dens:1,ang:-40,scrim:0.94};
+  colA:'#05E75D',colB:'#FFFFFF',colBg:'#000000',fx:'spray',dens:1,ang:-40,scrim:0.94};
 $('preset').addEventListener('click',()=>{
   Object.assign(S,PRESET);
   const set=(id,v,txt)=>{const e=$(id); if(e){e.value=v; const o=$(id+'V'); if(o&&txt!=null)o.textContent=txt;}};
@@ -1335,9 +1411,9 @@ $('preset').addEventListener('click',()=>{
   set('sat',100,'100%'); set('con',108,'108%'); set('matte',50,'50'); set('aura',80,'80'); set('outw',45,'45'); set('outc','a');
   set('dens',100,'100%'); set('ang',-40,'-40°'); set('scrim',94,'94%');
   $('fade').checked=true; $('cut').checked=true;
-  set('colA','#25E35F'); set('colB','#FFFFFF'); set('colBg','#000000');
+  set('colA','#05E75D'); set('colB','#FFFFFF'); set('colBg','#000000');
   if(!S.logo&&defaultLogo) S.logo=defaultLogo;
-  buildCutout(); render();
+  buildAll(); render();
 });
 $('fmt').addEventListener('change',e=>{const[w,h]=e.target.value.split('x').map(Number);S.W=w;S.H=h;render()});
 $('fam').addEventListener('change',async e=>{
@@ -1361,13 +1437,44 @@ $('hl1').addEventListener('click',()=>setText(autoHighlight(parseWords(S.text).m
 $('hl0').addEventListener('click',()=>setText(S.text.replace(/\*/g,'')));
 
 function loadImage(file,cb){const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>cb(im);im.src=fr.result};fr.readAsDataURL(file)}
-function setPhoto(im){ S.photo=im; S.maskSmall=null; S.cutC=null; S.silC=null; S.outC=null; render(); preparePhoto(); }
-$('photo').addEventListener('change',e=>{const f=e.target.files[0];if(f)loadImage(f,setPhoto)});
-$('cut').addEventListener('change',e=>{S.cut=e.target.checked; if(S.cut&&!S.maskSmall) preparePhoto(); else {buildCutout();render()}});
-$('matte').addEventListener('input',e=>{S.matte=+e.target.value/100;$('matteV').textContent=e.target.value;buildCutout();render()});
+function drawPlayerTabs(){
+  const box=$('playerTabs'); if(!box) return;
+  box.innerHTML='';
+  if(!S.players.length){
+    box.innerHTML='<span class="hint" style="margin:0">Nessun giocatore. Aggiungine uno o due qui sotto.</span>';
+    return;
+  }
+  S.players.forEach((p,i)=>{
+    const b=document.createElement('button');
+    b.className='ptab'+(i===S.pi?' on':'');
+    b.textContent='Giocatore '+(i+1);
+    b.addEventListener('click',()=>{ S.pi=i; syncPlayerSliders(); drawPlayerTabs() });
+    box.appendChild(b);
+  });
+}
+function syncPlayerSliders(){
+  const p=giocatore(); if(!p) return;
+  $('pz').value=Math.round(p.z*100); $('pzV').textContent=Math.round(p.z*100)+'%';
+  $('px').value=p.x; $('pxV').textContent=p.x;
+  $('py').value=p.y; $('pyV').textContent=p.y;
+}
+function addPlayer(im){
+  if(S.players.length>=4){ $('cutState').textContent='Massimo quattro giocatori.'; return }
+  const p=nuovoGiocatore(im);
+  S.players.push(p); S.pi=S.players.length-1;
+  drawPlayerTabs(); syncPlayerSliders(); render(); preparePhoto(p);
+}
+function setPhoto(im){ S.players=[]; S.pi=0; addPlayer(im); }
+$('photo').addEventListener('change',e=>{const f=e.target.files[0];if(f)loadImage(f,addPlayer); e.target.value=''});
+$('cut').addEventListener('change',e=>{
+  S.cut=e.target.checked;
+  if(S.cut) S.players.filter(p=>!p.mask).forEach(preparePhoto);
+  buildAll(); render();
+});
+$('matte').addEventListener('input',e=>{S.matte=+e.target.value/100;$('matteV').textContent=e.target.value;buildAll();render()});
 $('aura').addEventListener('input',e=>{S.aura=+e.target.value/100;$('auraV').textContent=e.target.value;render()});
 $('outw').addEventListener('input',e=>{S.outw=+e.target.value/100;$('outwV').textContent=e.target.value;render()});
-$('outc').addEventListener('change',e=>{S.outc=e.target.value;buildCutout();render()});
+$('outc').addEventListener('change',e=>{S.outc=e.target.value;buildAll();render()});
 $('logo').addEventListener('change',e=>{const f=e.target.files[0];if(f)loadImage(f,im=>{S.logo=im;render()})});
 $('tweet').addEventListener('change',e=>{const f=e.target.files[0];if(f)loadImage(f,im=>{S.tweet=im;render()})});
 $('clearTweet').addEventListener('click',()=>{S.tweet=null;render()});
@@ -1399,7 +1506,31 @@ function drawFaces(){
     box.appendChild(b);
   });
 }
-$('circle').addEventListener('change',e=>{const f=e.target.files[0];if(f)loadImage(f,im=>{S.circle=im;S.person='';drawFaces();render()})});
+let ultimaFaccia=null;
+$('circle').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f) return;
+  loadImage(f,im=>{
+    S.circle=im; S.person='';
+    ultimaFaccia=ritagliaTondo(im,440);
+    $('saveRow').style.display='flex';
+    $('newName').value=(f.name||'').replace(/\.[a-z0-9]+$/i,'').toUpperCase().slice(0,18);
+    drawFaces(); render();
+  });
+  e.target.value='';
+});
+$('savePerson').addEventListener('click',()=>{
+  const n=($('newName').value||'').trim().toUpperCase();
+  if(!n||!ultimaFaccia) return;
+  SALVATI=SALVATI.filter(x=>x.n!==n);
+  SALVATI.push({n,d:ultimaFaccia});
+  const ok=scriviSalvati(SALVATI);
+  S.person=n; peopleImgs[n]=S.circle;
+  $('saveRow').style.display='none';
+  drawFaces();
+  const b=$('savePerson');
+  b.textContent = ok? '✅ Salvato in rubrica' : '⚠️ Memoria del browser piena';
+  setTimeout(()=>b.textContent='💾 Salva in rubrica',2000);
+});
 $('clearCircle').addEventListener('click',()=>{S.circle=null;S.person='';drawFaces();render()});
 $('cirZ').addEventListener('input',e=>{S.cirZ=+e.target.value/100;$('cirZV').textContent=e.target.value+'%';render()});
 $('cirB').addEventListener('input',e=>{S.cirB=+e.target.value/100;$('cirBV').textContent=e.target.value;render()});
@@ -1418,7 +1549,12 @@ function applyModel(){
   render();
 }
 $('model').addEventListener('change',e=>{S.model=+e.target.value;applyModel()});
-$('clearPhoto').addEventListener('click',()=>{S.photo=null;S.maskSmall=null;S.cutC=null;S.silC=null;S.outC=null;render()});
+$('clearPhoto').addEventListener('click',()=>{
+  if(!S.players.length) return;
+  S.players.splice(S.pi,1);
+  S.pi=Math.max(0,S.pi-1);
+  drawPlayerTabs(); syncPlayerSliders(); render();
+});
 $('clearLogo').addEventListener('click',()=>{S.logo=defaultLogo;render()});
 
 function customFeeds(){ return $('feeds').value.split('\n').map(s=>s.trim()).filter(Boolean) }
@@ -1480,12 +1616,28 @@ $('toggleAuto').addEventListener('click',()=>{
 });
 $('soloTop').addEventListener('change',e=>{ S.soloTop=e.target.checked; refresh() });
 
-$('dl').addEventListener('click',()=>{
-  cv.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);
-    a.download='controcalcio-'+Date.now()+'.png';document.body.appendChild(a);a.click();a.remove();
-    setTimeout(()=>URL.revokeObjectURL(a.href),4000)},'image/png');
+$('qual').addEventListener('change',e=>{S.qual=+e.target.value});
+function esporta(){
+  const w=S.W,h=S.H,k=S.qual||2;
+  return new Promise(res=>{
+    if(k>1){ S.W=w*k; S.H=h*k; render() }
+    cv.toBlob(b=>{
+      if(k>1){ S.W=w; S.H=h; render() }
+      res(b);
+    },'image/png');
+  });
+}
+$('dl').addEventListener('click',async()=>{
+  const b=$('dl'); const testo=b.innerHTML;
+  b.innerHTML='⏳'; 
+  const blob=await esporta();
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='controcalcio-'+Date.now()+'.png';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+  b.innerHTML=testo;
 });
-$('open').addEventListener('click',()=>{cv.toBlob(b=>window.open(URL.createObjectURL(b),'_blank'),'image/png')});
+$('open').addEventListener('click',async()=>{ const b=await esporta(); window.open(URL.createObjectURL(b),'_blank') });
 
 /* ============ AVVIO ============ */
 (function boot(){
@@ -1493,7 +1645,7 @@ $('open').addEventListener('click',()=>{cv.toBlob(b=>window.open(URL.createObjec
   try{
     S.text=$('txt').value;
     drawSources(); syncFeeds();
-    renderChips(); syncCaption(); drawFaces(); applyModel(); render();
+    renderChips(); syncCaption(); drawFaces(); drawPlayerTabs(); applyModel(); render();
   }catch(e){ console.error('avvio',e) }
 
   // 2) logo e onda: sono dentro il file, non serve rete
@@ -1528,33 +1680,42 @@ $('open').addEventListener('click',()=>{cv.toBlob(b=>window.open(URL.createObjec
 <script>
 /* ===== rifiniture telefono ===== */
 (function(){
-  // Safari zooma col pizzico anche quando non serve: qui lo fermo
   ['gesturestart','gesturechange','gestureend'].forEach(ev=>
     document.addEventListener(ev, e=>e.preventDefault(), {passive:false}));
 
-  // ogni pannello diventa apribile col titolo, così ne resta aperto uno per volta
+  const stage=document.querySelector('.stage');
+  if(stage){
+    const p=document.createElement('button');
+    p.className='peek'; p.textContent='\u2922 ingrandisci';
+    p.addEventListener('click',()=>{
+      document.body.classList.toggle('big');
+      p.textContent=document.body.classList.contains('big')?'\u2921 riduci':'\u2922 ingrandisci';
+    });
+    stage.appendChild(p);
+  }
+
   document.querySelectorAll('section .card').forEach(card=>{
-    const head = card.querySelector('h2');
+    const head=card.querySelector('h2');
     if(!head) return;
-    const body = document.createElement('div');
-    body.className = 'cbody';
+    const body=document.createElement('div');
+    body.className='cbody';
     while(head.nextSibling) body.appendChild(head.nextSibling);
     card.appendChild(body);
-    head.addEventListener('click', ()=>{
-      const apri = !card.classList.contains('open');
+    head.addEventListener('click',()=>{
+      const apri=!card.classList.contains('open');
       card.parentElement.querySelectorAll('.card').forEach(c=>c.classList.remove('open'));
       if(apri){
         card.classList.add('open');
-        const y = card.getBoundingClientRect().top + window.scrollY - (window.innerHeight*0.40);
-        window.scrollTo({top:Math.max(0,y), behavior:'smooth'});
+        setTimeout(()=>{
+          const y=card.getBoundingClientRect().top+window.scrollY-(window.innerHeight*0.38);
+          window.scrollTo({top:Math.max(0,y),behavior:'smooth'});
+        },60);
       }
     });
   });
-
-  // all'apertura di ogni scheda tengo aperto il primo pannello
   ['tab-news','tab-text','tab-style'].forEach(id=>{
-    const first = document.querySelector('#'+id+' .card');
-    if(first) first.classList.add('open');
+    const f=document.querySelector('#'+id+' .card');
+    if(f) f.classList.add('open');
   });
 })();
 </script>
