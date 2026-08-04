@@ -958,7 +958,10 @@ function adattaAnteprima(){
   if(!W||!H) return;
   if(Math.abs(W-S.W)>6){ S.W=W; S.H=H }
 }
-function render(){ try{ disegna() }catch(e){ mostraErrore('disegno: '+e.message) } }
+function render(){
+  try{ disegna() }
+  catch(e){ mostraErrore('disegno — '+(e&&e.message?e.message:e)) }
+}
 function disegna(){
   if(!S.W||!S.H||!isFinite(S.W)||!isFinite(S.H)){ S.W=S.fmtW; S.H=S.fmtH }
   const W=S.W,H=S.H;
@@ -1709,12 +1712,22 @@ window.addEventListener('unhandledrejection',e=>mostraErrore('promessa: '+(e.rea
 
 /* ============ AVVIO ============ */
 (function boot(){
-  // 1) disegno subito, senza aspettare niente che venga da internet
-  try{
-    S.text=$('txt').value;
-    drawSources(); syncFeeds();
-    renderChips(); syncCaption(); drawFaces(); drawPlayerTabs(); applyModel(); render();
-  }catch(e){ console.error('avvio',e) }
+  // 1) ogni pezzo dell'avvio e indipendente: se uno fallisce gli altri vanno avanti
+  //    e il disegno parte comunque
+  function passo(nome,fn){
+    try{ fn() }
+    catch(e){ mostraErrore(nome+' — '+(e&&e.message?e.message:e)); }
+  }
+  passo('testo',      ()=>{ S.text=$('txt').value });
+  passo('fonti',      ()=>{ drawSources(); syncFeeds() });
+  passo('parole',     ()=>renderChips());
+  passo('didascalia', ()=>syncCaption());
+  passo('volti',      ()=>drawFaces());
+  passo('giocatori',  ()=>drawPlayerTabs());
+  passo('modello',    ()=>applyModel());
+  passo('disegno',    ()=>render());
+  // rete di sicurezza: se il riquadro fosse ancora vuoto, ci riprovo
+  setTimeout(()=>{ try{ render() }catch(e){ mostraErrore('secondo disegno — '+e.message) } },400);
 
   // 2) logo e onda: sono dentro il file, non serve rete
   try{
