@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Prova Controcalcio</title>
+<style>
+  body{margin:0;background:#080a08;color:#EDF2ED;font:15px/1.5 -apple-system,sans-serif;padding:16px}
+  h1{font-size:18px;margin:0 0 14px;color:#05E75D}
+  canvas{width:100%;height:auto;background:#111;border-radius:10px;display:block;margin-bottom:16px}
+  .riga{background:#151a15;border:1px solid #2b342b;border-radius:10px;padding:11px 13px;margin-bottom:8px;
+    font-size:14px;display:flex;justify-content:space-between;gap:10px}
+  .ok{color:#05E75D;font-weight:700}
+  .ko{color:#ff6b52;font-weight:700}
+  #err{background:#7a1d12;padding:11px;border-radius:10px;margin-bottom:12px;display:none;font-size:13px}
+</style>
+</head>
+<body>
+<h1>Prova di funzionamento</h1>
+<div id="err"></div>
+<canvas id="c" width="600" height="400"></canvas>
+<div id="info"></div>
+
+<script>
+var err=document.getElementById('err');
+window.onerror=function(m,f,l){ err.style.display='block'; err.textContent='ERRORE: '+m+' (riga '+l+')'; };
+
+var righe=[];
+function dice(nome,valore,buono){
+  righe.push('<div class="riga"><span>'+nome+'</span><span class="'+(buono?'ok':'ko')+'">'+valore+'</span></div>');
+}
+
+try{
+  var c=document.getElementById('c');
+  var g=c.getContext('2d');
+  dice('Canvas disponibile', g?'SÌ':'NO', !!g);
+
+  g.fillStyle='#000'; g.fillRect(0,0,600,400);
+  g.fillStyle='#05E75D';
+  g.fillRect(30,30,180,120);
+  g.fillStyle='#fff';
+  g.font='bold 54px Arial';
+  g.fillText('FUNZIONA', 30, 250);
+  g.fillStyle='#05E75D';
+  g.font='bold 34px Arial';
+  g.fillText('verde #05E75D', 30, 320);
+  dice('Disegno eseguito','SÌ',true);
+
+  dice('Larghezza schermo', window.innerWidth+' px', true);
+  dice('Densità pixel', (window.devicePixelRatio||1)+'×', true);
+
+  // memoria: provo un canvas grande come quello vero
+  var big=document.createElement('canvas');
+  big.width=1728; big.height=2160;
+  var bg=big.getContext('2d');
+  bg.fillStyle='#05E75D'; bg.fillRect(0,0,1728,2160);
+  var px=bg.getImageData(100,100,1,1).data;
+  var grande=(px[1]>200);
+  dice('Canvas grande 1728×2160', grande?'OK':'FALLITO', grande);
+
+  var enorme=document.createElement('canvas');
+  enorme.width=2160; enorme.height=2700;
+  var eg=enorme.getContext('2d');
+  eg.fillStyle='#05E75D'; eg.fillRect(0,0,2160,2700);
+  var px2=eg.getImageData(100,100,1,1).data;
+  var ok2=(px2[1]>200);
+  dice('Canvas export 2160×2700', ok2?'OK':'FALLITO', ok2);
+
+  dice('Memoria salvataggi', (function(){
+    try{ localStorage.setItem('prova','1'); localStorage.removeItem('prova'); return 'OK' }
+    catch(e){ return 'BLOCCATA' }
+  })()==='OK'?'OK':'BLOCCATA', (function(){try{localStorage.setItem('p','1');localStorage.removeItem('p');return true}catch(e){return false}})());
+
+  dice('Indirizzo', location.protocol.replace(':',''), location.protocol!=='file:');
+}catch(e){
+  err.style.display='block';
+  err.textContent='ERRORE: '+e.message;
+}
+document.getElementById('info').innerHTML=righe.join('');
+</script>
+</body>
+</html>
