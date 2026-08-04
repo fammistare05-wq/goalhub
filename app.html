@@ -142,7 +142,8 @@ header p,.homehint{display:none}
   border:0;border-radius:0;height:calc(var(--ph,36vh) + 20px);
   display:flex;align-items:center;justify-content:center;transition:height .22s ease}
 .stage canvas{height:var(--ph,36vh);width:auto;max-width:100%;border-radius:12px;
-  box-shadow:0 10px 30px rgba(0,0,0,.55);transform:translateZ(0);image-rendering:auto}
+  aspect-ratio:var(--ar,1080/1350);flex:0 0 auto;min-width:0;
+  box-shadow:0 10px 30px rgba(0,0,0,.55)}
 body.big{--ph:52vh}
 .peek{position:absolute;right:16px;bottom:12px;background:rgba(20,26,20,.92);
   border:1px solid var(--line);color:var(--muted);border-radius:20px;padding:5px 12px;
@@ -940,17 +941,29 @@ function wordmark(g,x,y,size){
 let esportando=false;
 /* il canvas viene disegnato esattamente ai pixel fisici dello schermo:
    niente ingrandimenti o riduzioni fatti dal browser, quindi massima nitidezza */
+/* Safari ha un tetto di pixel per canvas: oltre quello resta tutto bianco.
+   Qui riduco in proporzione se si supera il limite. */
+const MAXPX=11.5e6;
+function limita(W,H){
+  const px=W*H;
+  if(px<=MAXPX) return [W,H];
+  const f=Math.sqrt(MAXPX/px);
+  return [Math.round(W*f),Math.round(H*f)];
+}
 function adattaAnteprima(){
   const dpr=Math.min(3,window.devicePixelRatio||1);
   const alt=cv.clientHeight;
-  if(!alt) return;
+  if(!alt||alt<40) return;                       // riquadro non ancora misurabile
   let H=Math.round(alt*dpr);
   H=Math.max(S.fmtH,Math.min(H,Math.round(S.fmtH*2.2)));
-  const W=Math.round(H*S.fmtW/S.fmtH);
+  let W=Math.round(H*S.fmtW/S.fmtH);
+  [W,H]=limita(W,H);
+  if(!W||!H) return;
   if(Math.abs(W-S.W)>6){ S.W=W; S.H=H }
 }
 function render(){
   if(!esportando) adattaAnteprima();
+  if(!S.W||!S.H||!isFinite(S.W)||!isFinite(S.H)){ S.W=S.fmtW; S.H=S.fmtH }
   const W=S.W,H=S.H;
   if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H}
   const rgb=hexToRgb(S.colA);
@@ -1455,6 +1468,7 @@ $('fmt').addEventListener('change',e=>{
   const[w,h]=e.target.value.split('x').map(Number);
   S.fmtW=w; S.fmtH=h;
   S.W=Math.round(w*S.ante); S.H=Math.round(h*S.ante);
+  cv.style.setProperty('--ar',w+' / '+h);
   render();
 });
 $('fam').addEventListener('change',async e=>{
@@ -1660,7 +1674,7 @@ $('soloTop').addEventListener('change',e=>{ S.soloTop=e.target.checked; refresh(
 $('qual').addEventListener('change',e=>{S.qual=+e.target.value});
 function esporta(){
   const w=S.W,h=S.H,k=S.qual||2;
-  const nw=Math.round(S.fmtW*k), nh=Math.round(S.fmtH*k);
+  let [nw,nh]=limita(Math.round(S.fmtW*k),Math.round(S.fmtH*k));
   return new Promise(res=>{
     esportando=true; S.W=nw; S.H=nh; render();
     cv.toBlob(b=>{
