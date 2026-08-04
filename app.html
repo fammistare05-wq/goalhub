@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Controcalcio</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Controcalcio">
 <meta name="theme-color" content="#080a08">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -120,10 +121,63 @@
   .bar div{max-width:1240px;margin:0 auto;display:flex;gap:9px}
   .hidden{display:none}
 </style>
+
 <style>
-  textarea,input[type=text],select{font-size:16px}
-  input[type=range]{height:36px}
-  .wrap{padding-bottom:120px}
+/* ============ APP TELEFONO (solo aspetto, il canvas non si tocca) ============ */
+html{-webkit-text-size-adjust:100%}
+body{-webkit-tap-highlight-color:transparent}
+button,.filebtn,.chip,.face,.ptab,.tabs button,label{touch-action:manipulation}
+input[type=range]{touch-action:none;height:38px}
+
+@media(max-width:899px){
+  .wrap{padding:0 12px 150px}
+  header{padding:10px 2px 8px}
+  header h1{font-size:18px}
+  header p{display:none}
+
+  /* anteprima: blocco normale, larga quanto lo schermo — come nella versione che funziona */
+  .stage{padding:10px;margin-bottom:12px}
+
+  /* pannelli apribili uno alla volta */
+  .card{padding:0;overflow:hidden;margin-bottom:9px;border-radius:14px}
+  .card h2{margin:0;padding:17px 15px;display:flex;align-items:center;justify-content:space-between;
+    font-size:12px;letter-spacing:1.2px;color:var(--txt);-webkit-user-select:none;user-select:none}
+  .card h2::after{content:'';width:8px;height:8px;border-right:2px solid var(--muted);
+    border-bottom:2px solid var(--muted);transform:rotate(45deg) translate(-2px,-3px)}
+  .card.open h2{color:var(--green);border-bottom:1px solid var(--line)}
+  .card.open h2::after{border-color:var(--green);transform:rotate(-135deg) translate(-2px,-2px)}
+  .cbody{display:none;padding:15px}
+  .card.open .cbody{display:block}
+
+  /* comandi piu grandi */
+  textarea,input[type=text],select{font-size:16px;padding:14px;border-radius:12px}
+  button,.filebtn{padding:14px 12px;font-size:15px;border-radius:12px}
+  .row{gap:10px;margin-bottom:15px}
+  .field{margin-bottom:17px}
+  label{margin-bottom:9px;font-size:12.5px}
+  .check{margin-bottom:15px;font-size:14px}
+  .check input{width:23px;height:23px}
+  .chip{padding:10px 12px;font-size:13px}
+  .ptab{padding:11px 16px;font-size:14px}
+  .faces{gap:11px}
+  .item .thumb{width:80px;height:80px}
+  .item .ttl{font-size:14px}
+  .srcs{max-height:none}
+  .src-row{padding:12px 8px;font-size:14px}
+
+  /* barra unica in basso: schede + tasto verde di scarico */
+  .tabs{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:9;border-radius:0;
+    border:0;border-top:1px solid var(--line);background:rgba(9,12,9,.97);
+    gap:4px;padding:8px 98px 8px 10px;padding-bottom:calc(8px + env(safe-area-inset-bottom))}
+  .tabs button{padding:11px 2px;font-size:11px;display:flex;flex-direction:column;gap:3px;
+    border-radius:12px;line-height:1.1}
+  .bar{left:auto;right:10px;bottom:calc(12px + env(safe-area-inset-bottom));width:auto;
+    background:none;border:0;padding:0;z-index:10}
+  .bar>div{display:block;width:auto;max-width:none}
+  .bar #open{display:none}
+  .bar #dl{width:78px;height:58px;border-radius:16px;font-size:12px;padding:0;
+    box-shadow:0 6px 20px rgba(5,231,93,.4);display:flex;flex-direction:column;gap:2px;line-height:1.1}
+}
 </style>
 </head>
 <body>
@@ -138,9 +192,9 @@
 
     <div>
       <div class="tabs">
-        <button class="on" data-tab="news">📰 Notizie</button>
-        <button data-tab="text">✍️ Testo</button>
-        <button data-tab="style">🎨 Stile</button>
+        <button class="on" data-tab="news"><span>📰</span><span>Notizie</span></button>
+        <button data-tab="text"><span>✍️</span><span>Testo</span></button>
+        <button data-tab="style"><span>🎨</span><span>Stile</span></button>
       </div>
 
       <!-- ================= NOTIZIE ================= -->
@@ -441,7 +495,7 @@
 </div>
 
 <div class="bar"><div>
-  <button class="primary" id="dl">⬇️ Scarica post</button>
+  <button class="primary" id="dl"><span>⬇️</span><span>Scarica</span></button>
   <button id="open">Apri a schermo intero</button>
 </div></div>
 
@@ -1676,6 +1730,36 @@ window.addEventListener('unhandledrejection',e=>mostraErrore('promessa: '+(e.rea
   window.addEventListener('load',()=>setTimeout(render,700));
   let rz; window.addEventListener('resize',()=>{ clearTimeout(rz); rz=setTimeout(render,180) });
   window.addEventListener('orientationchange',()=>setTimeout(render,320));
+})();
+</script>
+
+<script>
+/* rifiniture telefono: non toccano il disegno */
+(function(){
+  try{
+    ['gesturestart','gesturechange','gestureend'].forEach(function(ev){
+      document.addEventListener(ev,function(e){e.preventDefault()},{passive:false});
+    });
+    if(window.innerWidth<900){
+      document.querySelectorAll('section .card').forEach(function(card){
+        var head=card.querySelector('h2');
+        if(!head) return;
+        var body=document.createElement('div');
+        body.className='cbody';
+        while(head.nextSibling) body.appendChild(head.nextSibling);
+        card.appendChild(body);
+        head.addEventListener('click',function(){
+          var apri=!card.classList.contains('open');
+          card.parentElement.querySelectorAll('.card').forEach(function(c){c.classList.remove('open')});
+          if(apri) card.classList.add('open');
+        });
+      });
+      ['tab-news','tab-text','tab-style'].forEach(function(id){
+        var f=document.querySelector('#'+id+' .card');
+        if(f) f.classList.add('open');
+      });
+    }
+  }catch(e){ if(window.mostraErrore) mostraErrore('rifiniture — '+e.message) }
 })();
 </script>
 </body>
