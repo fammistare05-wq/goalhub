@@ -2,13 +2,11 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Controcalcio</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Controcalcio">
 <meta name="theme-color" content="#080a08">
-<meta name="mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Bebas+Neue&family=Oswald:wght@700&family=Teko:wght@700&family=Big+Shoulders+Display:wght@800&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
@@ -122,89 +120,10 @@
   .bar div{max-width:1240px;margin:0 auto;display:flex;gap:9px}
   .hidden{display:none}
 </style>
-
 <style>
-/* ==================== APP TELEFONO ==================== */
-html{-webkit-text-size-adjust:100%}
-body{overscroll-behavior-y:contain;-webkit-tap-highlight-color:transparent}
-button,.filebtn,.chip,.face,.ptab,.tabs button,label{touch-action:manipulation}
-input[type=range]{touch-action:none;height:40px}
-
-.wrap{max-width:100%;padding:0 12px 150px}
-.grid{display:block}
-header{padding:10px 2px 8px;gap:8px}
-header h1{font-size:17px}
-header p,.homehint{display:none}
-
-/* ---------- anteprima ---------- */
-.stage{position:sticky;top:0;z-index:6;margin:0 -12px 14px;padding:8px 12px 10px;
-  background:var(--bg);border:0;border-radius:0;display:block;text-align:center}
-.stage canvas{display:inline-block;height:var(--ph,34vh);width:auto;max-width:100%;
-  border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
-body.big .stage canvas{height:56vh}
-.peek{position:absolute;right:16px;bottom:12px;background:rgba(20,26,20,.92);
-  border:1px solid var(--line);color:var(--muted);border-radius:20px;padding:5px 12px;
-  font-size:11px;font-weight:700;width:auto}
-
-/* ---------- pannelli a fisarmonica ---------- */
-.card{padding:0;overflow:hidden;margin-bottom:9px;border-radius:14px}
-.card h2{margin:0;padding:17px 15px;display:flex;align-items:center;justify-content:space-between;
-  font-size:12px;letter-spacing:1.2px;color:var(--txt);-webkit-user-select:none;user-select:none}
-.card h2::after{content:'';width:8px;height:8px;border-right:2px solid var(--muted);
-  border-bottom:2px solid var(--muted);transform:rotate(45deg) translate(-2px,-3px);transition:transform .2s}
-.card.open h2{color:var(--green);border-bottom:1px solid var(--line)}
-.card.open h2::after{border-color:var(--green);transform:rotate(-135deg) translate(-2px,-2px)}
-.cbody{display:none;padding:15px}
-.card.open .cbody{display:block}
-@media(prefers-reduced-motion:reduce){.card h2::after,.stage{transition:none}}
-
-/* ---------- comandi ---------- */
-textarea,input[type=text],select{font-size:16px;padding:14px;border-radius:12px}
-button,.filebtn{padding:14px 12px;font-size:15px;border-radius:12px}
-.row{gap:10px;margin-bottom:15px}
-.field{margin-bottom:17px}
-label{margin-bottom:9px;font-size:12.5px}
-.check{margin-bottom:15px;font-size:14px}
-.check input{width:23px;height:23px}
-.slider{gap:12px}
-.chip{padding:10px 12px;font-size:13px;border-radius:8px}
-.ptab{padding:11px 16px;font-size:14px}
-.faces{grid-template-columns:repeat(4,1fr);gap:11px}
-.face img{border-width:3px}
-.face .del{width:24px;height:24px;line-height:22px}
-.item{padding:11px;border-radius:14px}
-.item .thumb{width:80px;height:80px}
-.item .ttl{font-size:14px}
-.item .acts button{padding:11px 13px;font-size:13px}
-.srcs{max-height:none}
-.src-row{padding:12px 8px;font-size:14px}
-.timer{margin-bottom:14px}
-
-/* ---------- barra unica in basso ---------- */
-.tabs{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:9;border-radius:0;
-  border:0;border-top:1px solid var(--line);background:rgba(9,12,9,.97);
-  backdrop-filter:blur(14px);gap:4px;padding:8px 98px 8px 10px;
-  padding-bottom:calc(8px + env(safe-area-inset-bottom))}
-.tabs button{padding:11px 2px;font-size:11px;display:flex;flex-direction:column;gap:3px;
-  border-radius:12px;line-height:1.1}
-.bar{left:auto;right:10px;bottom:calc(12px + env(safe-area-inset-bottom));width:auto;
-  background:none;border:0;backdrop-filter:none;padding:0;z-index:10}
-.bar>div{display:block;width:auto;max-width:none}
-.bar #open{display:none}
-.bar #dl{width:78px;height:58px;border-radius:16px;font-size:12px;padding:0;
-  box-shadow:0 6px 20px rgba(37,227,95,.4);display:flex;flex-direction:column;gap:2px;line-height:1.1}
-
-@media(min-width:900px){
-  .tabs{position:sticky;bottom:auto;top:0;padding:5px;border-radius:12px;border:1px solid var(--line)}
-  .tabs button{flex-direction:row;font-size:13px}
-  .bar{left:0;right:0;bottom:0;width:auto;background:rgba(8,10,8,.95);
-    border-top:1px solid var(--line);padding:10px 14px}
-  .bar>div{display:flex}
-  .bar #open{display:inline-flex}
-  .bar #dl{width:auto;height:auto;flex-direction:row;padding:14px}
-  .stage{height:auto;display:block}
-  .stage canvas{height:auto;width:100%}
-}
+  textarea,input[type=text],select{font-size:16px}
+  input[type=range]{height:36px}
+  .wrap{padding-bottom:120px}
 </style>
 </head>
 <body>
@@ -219,9 +138,9 @@ label{margin-bottom:9px;font-size:12.5px}
 
     <div>
       <div class="tabs">
-        <button class="on" data-tab="news"><span>📰</span><span>Notizie</span></button>
-        <button data-tab="text"><span>✍️</span><span>Testo</span></button>
-        <button data-tab="style"><span>🎨</span><span>Stile</span></button>
+        <button class="on" data-tab="news">📰 Notizie</button>
+        <button data-tab="text">✍️ Testo</button>
+        <button data-tab="style">🎨 Stile</button>
       </div>
 
       <!-- ================= NOTIZIE ================= -->
@@ -522,7 +441,7 @@ label{margin-bottom:9px;font-size:12.5px}
 </div>
 
 <div class="bar"><div>
-  <button class="primary" id="dl"><span>⬇️</span><span>Scarica</span></button>
+  <button class="primary" id="dl">⬇️ Scarica post</button>
   <button id="open">Apri a schermo intero</button>
 </div></div>
 
@@ -1757,51 +1676,6 @@ window.addEventListener('unhandledrejection',e=>mostraErrore('promessa: '+(e.rea
   window.addEventListener('load',()=>setTimeout(render,700));
   let rz; window.addEventListener('resize',()=>{ clearTimeout(rz); rz=setTimeout(render,180) });
   window.addEventListener('orientationchange',()=>setTimeout(render,320));
-})();
-</script>
-
-<script>
-/* ===== rifiniture telefono ===== */
-(function(){
-  ['gesturestart','gesturechange','gestureend'].forEach(ev=>
-    document.addEventListener(ev, e=>e.preventDefault(), {passive:false}));
-
-  const stage=document.querySelector('.stage');
-  if(stage){
-    const p=document.createElement('button');
-    p.className='peek'; p.textContent='\u2922 ingrandisci';
-    p.addEventListener('click',()=>{
-      document.body.classList.toggle('big');
-      p.textContent=document.body.classList.contains('big')?'\u2921 riduci':'\u2922 ingrandisci';
-      // ricalcolo i pixel dell'anteprima alla nuova dimensione
-      setTimeout(()=>window.dispatchEvent(new Event('resize')),260);
-    });
-    stage.appendChild(p);
-  }
-
-  document.querySelectorAll('section .card').forEach(card=>{
-    const head=card.querySelector('h2');
-    if(!head) return;
-    const body=document.createElement('div');
-    body.className='cbody';
-    while(head.nextSibling) body.appendChild(head.nextSibling);
-    card.appendChild(body);
-    head.addEventListener('click',()=>{
-      const apri=!card.classList.contains('open');
-      card.parentElement.querySelectorAll('.card').forEach(c=>c.classList.remove('open'));
-      if(apri){
-        card.classList.add('open');
-        setTimeout(()=>{
-          const y=card.getBoundingClientRect().top+window.scrollY-(window.innerHeight*0.38);
-          window.scrollTo({top:Math.max(0,y),behavior:'smooth'});
-        },60);
-      }
-    });
-  });
-  ['tab-news','tab-text','tab-style'].forEach(id=>{
-    const f=document.querySelector('#'+id+' .card');
-    if(f) f.classList.add('open');
-  });
 })();
 </script>
 </body>
