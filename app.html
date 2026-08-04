@@ -184,6 +184,7 @@ input[type=range]{touch-action:none;height:38px}
 <div class="wrap">
   <header>
     <h1>Contro<span>calcio</span> Hub</h1>
+    <span id="ver" style="font-size:11px;color:var(--muted);font-weight:700">v14</span>
     <p>Notizie live → post pronto in due tap.</p>
   </header>
 
@@ -1722,8 +1723,13 @@ window.addEventListener('unhandledrejection',e=>mostraErrore('promessa: '+(e.rea
   try{
     waveImg=new Image(); waveImg.onload=()=>render(); waveImg.src=WAVE_IMG;
     defaultLogo=new Image();
-    defaultLogo.onload=()=>{ if(!S.logo){S.logo=defaultLogo} render() };
+    defaultLogo.onload=()=>{ S.logo=S.logo||defaultLogo; render() };
+    defaultLogo.onerror=()=>mostraErrore('il logo dentro il file non si apre');
     defaultLogo.src=DEFAULT_LOGO;
+    if(defaultLogo.complete&&defaultLogo.naturalWidth){ S.logo=defaultLogo; render() }
+    setTimeout(()=>{
+      if(!S.logo) mostraErrore('logo non caricato dopo 2 secondi — stai forse usando una versione vecchia del file?');
+    },2000);
   }catch(e){ console.error('immagini',e) }
 
   // 3) il font arriva da internet: se tarda o manca, si va avanti lo stesso
