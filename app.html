@@ -142,8 +142,8 @@ header p,.homehint{display:none}
   border:0;border-radius:0;height:calc(var(--ph,36vh) + 20px);
   display:flex;align-items:center;justify-content:center;transition:height .22s ease}
 .stage canvas{height:var(--ph,36vh);width:auto;max-width:100%;border-radius:12px;
-  box-shadow:0 10px 30px rgba(0,0,0,.55)}
-body.big{--ph:60vh}
+  box-shadow:0 10px 30px rgba(0,0,0,.55);transform:translateZ(0);image-rendering:auto}
+body.big{--ph:52vh}
 .peek{position:absolute;right:16px;bottom:12px;background:rgba(20,26,20,.92);
   border:1px solid var(--line);color:var(--muted);border-radius:20px;padding:5px 12px;
   font-size:11px;font-weight:700;width:auto}
@@ -389,7 +389,7 @@ label{margin-bottom:9px;font-size:12.5px}
           </div>
           <div class="row">
             <div><label for="tsize">Dimensione</label><div class="slider"><input type="range" id="tsize" min="60" max="140" value="100"><span class="val" id="tsizeV">100%</span></div></div>
-            <div><label for="lead">Interlinea</label><div class="slider"><input type="range" id="lead" min="72" max="120" value="90"><span class="val" id="leadV">90%</span></div></div>
+            <div><label for="lead">Interlinea</label><div class="slider"><input type="range" id="lead" min="72" max="120" value="86"><span class="val" id="leadV">86%</span></div></div>
           </div>
           <div class="row">
             <div><label for="skew">Inclinazione</label><div class="slider"><input type="range" id="skew" min="0" max="24" value="12"><span class="val" id="skewV">12°</span></div></div>
@@ -588,7 +588,7 @@ const SOURCES=[
 SOURCES.forEach(s=>s.count=null);
 const DEFAULT_FEEDS = SOURCES.filter(s=>s.on).map(s=>s.u);
 const S = {
-  text:'', fam:'Anton', tsize:1, lead:0.90, skew:12, tup:0, align:'fill',
+  text:'', fam:'Anton', tsize:1, lead:0.86, skew:12, tup:0, align:'fill',
   badge:'', handle:'',
   players:[], pi:0, sat:1, con:1.05, fade:true,
   cut:true, matte:0.5, aura:0.8, outw:0.45, outc:'a',
@@ -599,7 +599,7 @@ const S = {
   bg:null, bgd:0.74,
   colA:'#05E75D', colB:'#FFFFFF', colBg:'#000000',
   fx:'spray', dens:1, ang:-40, scrim:0.94, seed:7,
-  W:1080, H:1350, qual:2,
+  fmtW:1080, fmtH:1350, W:1512, H:1890, ante:1.4, qual:2,
   feeds:[...DEFAULT_FEEDS], items:[], q:'', auto:true, soloTop:true, scartate:0
 };
 if(!CanvasRenderingContext2D.prototype.roundRect){
@@ -611,6 +611,7 @@ if(!CanvasRenderingContext2D.prototype.roundRect){
   };
 }
 const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
 let defaultLogo=null;
 const $=id=>document.getElementById(id);
 
@@ -662,7 +663,7 @@ function buildFx(W,H,rgb){
   const key=[W,H,S.fx,S.dens,S.ang,S.seed,S.colA].join('|');
   if(fxCache.key===key) return fxCache.c;
   const c=document.createElement('canvas'); c.width=W; c.height=H;
-  const g=c.getContext('2d');
+  const g=c.getContext('2d'); g.imageSmoothingQuality='high';
   const rnd=mulberry32(S.seed);
   const ang=S.ang*Math.PI/180, dx=Math.cos(ang), dy=Math.sin(ang), nx=-dy, ny=dx;
   const cx=W*0.52, cy=H*0.30;
@@ -801,7 +802,7 @@ function tunedMask(p){
   const c=document.createElement('canvas'); c.width=w; c.height=h;
   const g=c.getContext('2d'); g.drawImage(p.mask,0,0);
   const id=g.getImageData(0,0,w,h);
-  const t=60+S.matte*120, k=1.6+S.matte*2.2;
+  const t=60+S.matte*120, k=2.6+S.matte*3.4;   // bordo piu deciso, meno alone sfocato
   for(let i=0;i<w*h;i++){
     const a=id.data[i*4+3];
     id.data[i*4+3]=Math.max(0,Math.min(255,(a-t)*k+128));
@@ -877,7 +878,7 @@ function livelloGiocatore(p,W,H,box,slotCx,slotW){
   const img=(S.cut&&p.cut)?p.cut:p.img;
   const isCut=(S.cut&&!!p.cut);
   const c=document.createElement('canvas'); c.width=W; c.height=H;
-  const g=c.getContext('2d');
+  const g=c.getContext('2d'); g.imageSmoothingQuality='high';
   const sc=Math.min(slotW/img.width,box.h/img.height)*p.z;
   const w=img.width*sc, h=img.height*sc;
   const x=slotCx-w/2+p.x*W*0.006;
@@ -917,7 +918,7 @@ function livelloGiocatore(p,W,H,box,slotCx,slotW){
 }
 function photoLayer(W,H,box){
   const c=document.createElement('canvas'); c.width=W; c.height=H;
-  const g=c.getContext('2d');
+  const g=c.getContext('2d'); g.imageSmoothingQuality='high';
   const n=S.players.length;
   S.players.forEach((p,i)=>{
     const slotW = n>1 ? box.w/n*1.22 : box.w;
@@ -936,7 +937,20 @@ function wordmark(g,x,y,size){
 }
 
 /* ============ RENDER ============ */
+let esportando=false;
+/* il canvas viene disegnato esattamente ai pixel fisici dello schermo:
+   niente ingrandimenti o riduzioni fatti dal browser, quindi massima nitidezza */
+function adattaAnteprima(){
+  const dpr=Math.min(3,window.devicePixelRatio||1);
+  const alt=cv.clientHeight;
+  if(!alt) return;
+  let H=Math.round(alt*dpr);
+  H=Math.max(S.fmtH,Math.min(H,Math.round(S.fmtH*2.2)));
+  const W=Math.round(H*S.fmtW/S.fmtH);
+  if(Math.abs(W-S.W)>6){ S.W=W; S.H=H }
+}
 function render(){
+  if(!esportando) adattaAnteprima();
   const W=S.W,H=S.H;
   if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H}
   const rgb=hexToRgb(S.colA);
@@ -1339,19 +1353,41 @@ function autoHighlight(t){
   const w=t.split(/\s+/);
   return w.length>4? '*'+w.slice(0,3).join(' ')+'* '+w.slice(3).join(' ') : t;
 }
+/* le miniature RSS sono spesso 150-300 px: vado a prendere la foto
+   grande dichiarata dall'articolo (og:image), molto piu nitida */
+async function fotoGrande(link,ripiego){
+  if(!link) return ripiego;
+  try{
+    const html=await viaProxy(link,'text');
+    if(!html) return ripiego;
+    const m = html.match(/<meta[^>]+property=["']og:image(?::secure_url)?["'][^>]*content=["']([^"']+)["']/i)
+           || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]*property=["']og:image["']/i)
+           || html.match(/<meta[^>]+name=["']twitter:image["'][^>]*content=["']([^"']+)["']/i);
+    if(m && /^https?:/i.test(m[1])) return m[1];
+  }catch(e){}
+  return ripiego;
+}
 async function makePost(it){
   setText(autoHighlight(it.t));
   switchTab('text');
-  if(it.img){
-    $('feedState').innerHTML='<span class="dot"></span>Scarico la foto…';
-    const b=await viaProxy(it.img,'blob');
-    if(b&&b.type.startsWith('image')){
-      const im=new Image();
-      im.onload=()=>setPhoto(im);
-      im.src=URL.createObjectURL(b);
-    }
-    $('feedState').innerHTML='<span class="dot"></span>Post pronto';
+  if(!it.img && !it.link) return;
+  $('feedState').innerHTML='<span class="dot"></span>Cerco la foto in alta definizione…';
+  const url=await fotoGrande(it.link,it.img);
+  if(!url){ $('feedState').innerHTML='<span class="dot"></span>Nessuna foto nell\'articolo'; return }
+  const b=await viaProxy(url,'blob');
+  if(b&&b.type.startsWith('image')){
+    const im=new Image();
+    im.onload=()=>{ setPhoto(im); avvisaRisoluzione(im) };
+    im.src=URL.createObjectURL(b);
   }
+  $('feedState').innerHTML='<span class="dot"></span>Post pronto';
+}
+function avvisaRisoluzione(im){
+  const el=$('cutState'); if(!el) return;
+  const lato=Math.max(im.width,im.height);
+  if(lato<700) el.textContent='⚠️ Foto piccola ('+im.width+'×'+im.height+'): verra sgranata. Meglio cercarne una piu grande.';
+  else if(lato<1100) el.textContent='Foto media ('+im.width+'×'+im.height+'). Accettabile, ma una piu grande resa meglio.';
+  else el.textContent='Foto in alta definizione ('+im.width+'×'+im.height+'). ✅';
 }
 
 /* ============ TAB ============ */
@@ -1400,14 +1436,14 @@ $('fx').addEventListener('change',e=>{S.fx=e.target.value;render()});
 $('fade').addEventListener('change',e=>{S.fade=e.target.checked;render()});
 $('lpos').addEventListener('change',e=>{S.lpos=e.target.value;render()});
 $('reseed').addEventListener('click',()=>{S.seed=Math.floor(Math.random()*1e6);render()});
-const PRESET={fam:'Anton',tsize:1,lead:0.90,skew:12,tup:0,align:'fill',
+const PRESET={fam:'Anton',tsize:1,lead:0.86,skew:12,tup:0,align:'fill',
   sat:1,con:1.08,fade:true,cut:true,matte:0.5,aura:0.8,outw:0.45,outc:'a',
   colA:'#05E75D',colB:'#FFFFFF',colBg:'#000000',fx:'spray',dens:1,ang:-40,scrim:0.94};
 $('preset').addEventListener('click',()=>{
   Object.assign(S,PRESET);
   const set=(id,v,txt)=>{const e=$(id); if(e){e.value=v; const o=$(id+'V'); if(o&&txt!=null)o.textContent=txt;}};
   set('fam','Anton'); set('align','fill'); set('fx','spray');
-  set('tsize',100,'100%'); set('lead',90,'90%'); set('skew',12,'12°'); set('tup',0,'0');
+  set('tsize',100,'100%'); set('lead',86,'86%'); set('skew',12,'12°'); set('tup',0,'0');
   set('sat',100,'100%'); set('con',108,'108%'); set('matte',50,'50'); set('aura',80,'80'); set('outw',45,'45'); set('outc','a');
   set('dens',100,'100%'); set('ang',-40,'-40°'); set('scrim',94,'94%');
   $('fade').checked=true; $('cut').checked=true;
@@ -1415,7 +1451,12 @@ $('preset').addEventListener('click',()=>{
   if(!S.logo&&defaultLogo) S.logo=defaultLogo;
   buildAll(); render();
 });
-$('fmt').addEventListener('change',e=>{const[w,h]=e.target.value.split('x').map(Number);S.W=w;S.H=h;render()});
+$('fmt').addEventListener('change',e=>{
+  const[w,h]=e.target.value.split('x').map(Number);
+  S.fmtW=w; S.fmtH=h;
+  S.W=Math.round(w*S.ante); S.H=Math.round(h*S.ante);
+  render();
+});
 $('fam').addEventListener('change',async e=>{
   S.fam=e.target.value;
   try{ await document.fonts.load(`400 100px "${S.fam}"`); }catch(err){}
@@ -1465,7 +1506,7 @@ function addPlayer(im){
   drawPlayerTabs(); syncPlayerSliders(); render(); preparePhoto(p);
 }
 function setPhoto(im){ S.players=[]; S.pi=0; addPlayer(im); }
-$('photo').addEventListener('change',e=>{const f=e.target.files[0];if(f)loadImage(f,addPlayer); e.target.value=''});
+$('photo').addEventListener('change',e=>{const f=e.target.files[0];if(f)loadImage(f,im=>{addPlayer(im);avvisaRisoluzione(im)}); e.target.value=''});
 $('cut').addEventListener('change',e=>{
   S.cut=e.target.checked;
   if(S.cut) S.players.filter(p=>!p.mask).forEach(preparePhoto);
@@ -1619,10 +1660,11 @@ $('soloTop').addEventListener('change',e=>{ S.soloTop=e.target.checked; refresh(
 $('qual').addEventListener('change',e=>{S.qual=+e.target.value});
 function esporta(){
   const w=S.W,h=S.H,k=S.qual||2;
+  const nw=Math.round(S.fmtW*k), nh=Math.round(S.fmtH*k);
   return new Promise(res=>{
-    if(k>1){ S.W=w*k; S.H=h*k; render() }
+    esportando=true; S.W=nw; S.H=nh; render();
     cv.toBlob(b=>{
-      if(k>1){ S.W=w; S.H=h; render() }
+      esportando=false; S.W=w; S.H=h; render();
       res(b);
     },'image/png');
   });
@@ -1674,6 +1716,8 @@ $('open').addEventListener('click',async()=>{ const b=await esporta(); window.op
   // 4) le notizie partono dopo, non bloccano mai la grafica
   setTimeout(()=>{ try{ refresh() }catch(e){ console.error('notizie',e) } },300);
   window.addEventListener('load',()=>setTimeout(render,700));
+  let rz; window.addEventListener('resize',()=>{ clearTimeout(rz); rz=setTimeout(render,180) });
+  window.addEventListener('orientationchange',()=>setTimeout(render,320));
 })();
 </script>
 
@@ -1690,6 +1734,8 @@ $('open').addEventListener('click',async()=>{ const b=await esporta(); window.op
     p.addEventListener('click',()=>{
       document.body.classList.toggle('big');
       p.textContent=document.body.classList.contains('big')?'\u2921 riduci':'\u2922 ingrandisci';
+      // ricalcolo i pixel dell'anteprima alla nuova dimensione
+      setTimeout(()=>window.dispatchEvent(new Event('resize')),260);
     });
     stage.appendChild(p);
   }
