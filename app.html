@@ -186,7 +186,7 @@ input[type=range]{touch-action:none;height:38px}
 <div class="wrap">
   <header>
     <h1>Contro<span>calcio</span> Hub</h1>
-    <span id="ver" style="font-size:11px;color:var(--muted);font-weight:700">v17</span>
+    <span id="ver" style="font-size:11px;color:var(--muted);font-weight:700">v18</span>
     <p>Notizie live → post pronto in due tap.</p>
   </header>
 
@@ -1745,28 +1745,50 @@ $('toggleAuto').addEventListener('click',()=>{
 $('soloTop').addEventListener('change',e=>{ S.soloTop=e.target.checked; refresh() });
 
 $('qual').addEventListener('change',e=>{S.qual=+e.target.value});
-function esporta(){
+
+const SU_IPHONE=/iPad|iPhone|iPod/.test(navigator.userAgent)||
+  (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+
+/* esportazione tutta d'un fiato: nessuna attesa, cosi Safari
+   la considera ancora figlia del tuo tocco e non la blocca */
+function esportaSubito(){
   const w=S.W,h=S.H,k=S.qual||2;
-  let [nw,nh]=limita(Math.round(S.fmtW*k),Math.round(S.fmtH*k));
-  return new Promise(res=>{
-    esportando=true; S.W=nw; S.H=nh; render();
-    cv.toBlob(b=>{
-      esportando=false; S.W=w; S.H=h; render();
-      res(b);
-    },'image/png');
-  });
+  const mis=limita(Math.round(S.fmtW*k),Math.round(S.fmtH*k));
+  esportando=true;
+  S.W=mis[0]; S.H=mis[1];
+  disegna();
+  const url=cv.toDataURL('image/png');
+  esportando=false; S.W=w; S.H=h; render();
+  return url;
 }
-$('dl').addEventListener('click',async()=>{
-  const b=$('dl'); const testo=b.innerHTML;
-  b.innerHTML='⏳'; 
-  const blob=await esporta();
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-  a.download='controcalcio-'+Date.now()+'.png';
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(()=>URL.revokeObjectURL(a.href),5000);
-  b.innerHTML=testo;
+function pannelloSalva(url){
+  let o=document.getElementById('salvaBox');
+  if(o) o.remove();
+  o=document.createElement('div');
+  o.id='salvaBox';
+  o.style.cssText='position:fixed;inset:0;z-index:50;background:rgba(4,6,4,.94);overflow:auto;'+
+    'padding:16px;text-align:center;backdrop-filter:blur(6px)';
+  o.innerHTML='<p style="color:#05E75D;font:800 13px Inter,sans-serif;margin:6px 0 12px">'+
+    'TIENI PREMUTO SULL\'IMMAGINE → SALVA SU FOTO</p>'+
+    '<img src="'+url+'" style="width:100%;max-width:520px;border-radius:12px;display:block;margin:0 auto 14px">'+
+    '<a href="'+url+'" download="controcalcio-'+Date.now()+'.png" '+
+    'style="display:inline-block;background:#05E75D;color:#06180c;font:800 15px Inter,sans-serif;'+
+    'padding:14px 22px;border-radius:12px;text-decoration:none;margin-right:8px">⬇️ Scarica file</a>'+
+    '<button id="chiudiSalva" style="width:auto;background:#1b221b;color:#EDF2ED;border:1px solid #2b342b;'+
+    'padding:14px 22px;border-radius:12px;font:600 15px Inter,sans-serif">Chiudi</button>';
+  document.body.appendChild(o);
+  document.getElementById('chiudiSalva').addEventListener('click',()=>o.remove());
+}
+$('dl').addEventListener('click',()=>{
+  try{
+    const url=esportaSubito();
+    if(SU_IPHONE){ pannelloSalva(url); return }
+    const a=document.createElement('a');
+    a.href=url; a.download='controcalcio-'+Date.now()+'.png';
+    document.body.appendChild(a); a.click(); a.remove();
+  }catch(e){ mostraErrore('scarico — '+(e&&e.message?e.message:e)) }
 });
-$('open').addEventListener('click',async()=>{ const b=await esporta(); window.open(URL.createObjectURL(b),'_blank') });
+$('open').addEventListener('click',()=>{ try{ pannelloSalva(esportaSubito()) }catch(e){ mostraErrore('anteprima — '+e.message) } });
 
 /* ============ RILEVATORE DI ERRORI ============ */
 function mostraErrore(msg){
