@@ -321,6 +321,18 @@ details[open] summary::before{content:"− "}
 .girls{display:flex;gap:10px;margin-top:10px}
 .girls button{border:2px solid transparent;background:none;padding:2px;border-radius:50%;line-height:0}
 .girls button[aria-pressed="true"]{border-color:var(--accent)}
+.motiv.big{flex-direction:column;text-align:center;top:calc(70px + env(safe-area-inset-top,0px));padding:22px 20px;gap:12px;border-color:var(--accent);max-width:360px}
+.motiv.big .av{width:112px;height:112px;box-shadow:0 0 0 4px var(--accent)}
+.motiv.big .av img,.motiv.big .av svg,.motiv.big .av video{width:112px;height:112px}
+.motiv.big .tx{font-size:19px;font-weight:600;align-items:center}
+.motiv.big .tx b{font-size:16px}
+.motiv .av img,.motiv .av video{width:52px;height:52px;object-fit:cover;display:block}
+.fr .ph0 video{width:48px;height:48px;object-fit:cover;display:block}
+.fr{display:grid;grid-template-columns:48px 1fr auto;gap:10px;align-items:center;padding:6px 0}
+.fr .ph0{width:48px;height:48px;border-radius:50%;overflow:hidden;background:var(--surface2)}
+.fr .ph0 img{width:48px;height:48px;object-fit:cover;display:block}
+.girls{flex-wrap:wrap}
+.girls img{width:52px;height:52px;border-radius:50%;object-fit:cover;display:block}
 @media (prefers-reduced-motion:reduce){.motiv.in{animation:none}}
 @media (prefers-reduced-motion:reduce){.ph img,.mbar .fi{transition:none}}
 @media (max-width:380px){.hero .ttl{font-size:38px}}
@@ -491,6 +503,9 @@ details[open] summary::before{content:"− "}
       <label class="tog">Schermo sempre acceso in allenamento<input type="checkbox" id="sWake"></label>
       <label class="tog">Motivatrici (messaggi che ti spronano)<input type="checkbox" id="sMotiv"></label>
       <div style="padding:10px 0"><div class="note" style="margin:0;font-weight:700;letter-spacing:.07em;text-transform:uppercase">Chi ti sprona</div><div class="girls" id="girls"></div></div>
+      <div style="padding:10px 0;border-top:1px solid var(--line)"><div class="row"><div class="note" style="margin:0;font-weight:700;letter-spacing:.07em;text-transform:uppercase">I tuoi motivatori</div><button class="btn sm" id="frAdd">+ Aggiungi</button></div>
+        <div id="frList" style="margin-top:6px"></div>
+        <label class="tog" style="border:0">Solo i miei motivatori<input type="checkbox" id="sOnlyFr"></label></div>
     </div>
     <button class="btn" id="sSave" style="margin-top:10px">Salva impostazioni</button>
     <p class="note">Il bilanciere del Multipower spesso pesa meno di 20 kg: controllalo in palestra.</p>
@@ -655,7 +670,7 @@ const ICONS={home:'<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M
 const ic=(n,s)=>`<svg class="i" viewBox="0 0 24 24"${s?` style="width:${s}px;height:${s}px"`:""} aria-hidden="true">${ICONS[n]}</svg>`;
 
 /* ================= ARCHIVIO ================= */
-const state={appts:[],sets:[],sessions:[],body:[],foods:[],water:[],settings:[],meals:[],myfoods:[],photos:[],plans:[]};
+const state={friends:[],appts:[],sets:[],sessions:[],body:[],foods:[],water:[],settings:[],meals:[],myfoods:[],photos:[],plans:[]};
 const COLS=Object.keys(state);
 let DB=null,ASSETS=null,SAMPLE=null,DL=null,mode="pending";
 function localSave(){LS.set(LSK+"-data",state)}
@@ -665,7 +680,7 @@ const api={
   async del(col,id){if(mode==="db"){try{await DB.doc(col+"/"+id).delete()}catch(e){toast("Non eliminato: riprova")}}else{state[col]=state[col].filter(x=>x.id!==id);localSave();onData(col)}}
 };
 const getS=id=>state.settings.find(x=>x.id===id)||null;
-const PREF_DEF={bar:20,smith:15,inc:2.5,rest:90,sound:true,vib:true,wake:true,plan:"base",motiv:true,girl:"random"};
+const PREF_DEF={bar:20,smith:15,inc:2.5,rest:90,sound:true,vib:true,wake:true,plan:"base",motiv:true,girl:"random",onlyFr:false};
 const prefs=()=>Object.assign({},PREF_DEF,getS("prefs")||{});
 const savePrefs=p=>{const o=Object.assign({},prefs(),p);delete o.id;return api.put("settings","prefs",o)};
 const plans=()=>[BASE,...state.plans.filter(p=>p.days)];
@@ -757,7 +772,7 @@ function onData(col){
   if(view==="train"&&["sets","plans","settings","sessions"].includes(col))renderTrain();
   if(view==="food"&&["foods","water","settings","meals","myfoods"].includes(col))renderFood();
   if(view==="prog"&&["sets","sessions","body","photos","plans","settings"].includes(col))renderProg();
-  if(view==="more"&&["settings","appts"].includes(col))renderMore();
+  if(view==="more"&&["settings","appts","friends"].includes(col))renderMore();
   if(!$("#wo").hidden&&["sets","settings","plans"].includes(col))renderWo();
   if(!$("#sheet").hidden&&sheetRefresh&&["meals","myfoods","foods"].includes(col))sheetRefresh();
 }
@@ -1118,12 +1133,39 @@ const MSG={
  water:["2,5 litri! Idratazione perfetta.","Acqua completata, bravo!"],
  protein:["Proteine completate per oggi. I muscoli ringraziano!"],
  hello:["Buongiorno {n}! {plan}","Ehi {n}! {plan}","Ciao {n}! {plan}"]};
+const TONES={carica:"Carica",sfotto:"Sfottò",fan:"Fan sfegatato"};
+const TMSG={
+ sfotto:{start:["Ah, ti sei presentato! Pensavo avessi già mollato.","Vediamo se oggi alzi qualcosa oltre alla forchetta.","{day}? Speriamo tu non faccia il turista come l'ultima volta."],
+  set:["Tutto qui? Dai che ne hai ancora.","Non male. Per essere te.","Ok, questa era decente. La prossima meglio.","Respira, non svenire. Poi un'altra."],
+  exdone:["Uno fatto. Non montarti la testa: ora {next}.","Sopravvissuto. Adesso {next}, niente scuse."],
+  pr:["Record?! Ok, stavolta ti devo fare i complimenti.","Record su {ex}? Chi sei e cosa hai fatto a {n}?"],
+  rest:["Il recupero è finito, non è un aperitivo.","Giù il telefono, tocca a te."],
+  finish:["Finito? Bravo, adesso niente pizza. Forse.","Sopravvissuto anche oggi. Te lo concedo."],
+  water:["Hai bevuto tutto? Miracolo."],protein:["Proteine fatte. Ora non rovinare tutto col dolce."],
+  hello:["Oh {n}! {plan}","Svegliati {n}! {plan}"]},
+ fan:{start:["Eccolo! Oggi spacchi tutto.","Il campione è arrivato. {day}, andiamo!"],
+  set:["Che serie! Sei una macchina.","Esecuzione da manuale.","Mamma mia che forza oggi!","Sei on fire, continua!"],
+  exdone:["Distrutto anche questo! Ora {next}."],
+  pr:["RECORD! Sei un fenomeno su {ex}!","Nuovo record, sei imbattibile!","Che bestia! {pt} ti deve fare una statua."],
+  rest:["Pronto campione? Si riparte!"],
+  finish:["Allenamento da top player. Orgoglioso di te!","Leggendario. {min} minuti di pura potenza."],
+  water:["Idratato come un pro!"],protein:["Proteine completate, sei un esempio!"],
+  hello:["Buongiorno campione! {plan}"]}};
+const frPhotoUrl={};
+async function friendUrl(f){if(!f)return "";if(frPhotoUrl[f.id])return frPhotoUrl[f.id];const u=await photoUrl(f);frPhotoUrl[f.id]=u;return u}
+var motivPool=function(){const P=prefs(),fr=state.friends.map(f=>"f:"+f.id);if(P.girl&&P.girl!=="random"){if(P.girl.startsWith("f:")&&fr.includes(P.girl))return[P.girl];if(GIRLS[P.girl])return[P.girl]}
+  if(P.onlyFr&&fr.length)return fr;return[...Object.keys(GIRLS),...fr]};
 let lastMotiv=0,motivTo=null;
-function motivate(kind,vars,force){const P=prefs();if(!P.motiv)return;if(!force&&Date.now()-lastMotiv<15000)return;const list=MSG[kind];if(!list)return;
-  const ids=Object.keys(GIRLS),gid=P.girl&&GIRLS[P.girl]?P.girl:ids[Math.floor(Math.random()*ids.length)],g=GIRLS[gid];
-  const v=Object.assign({n:"Francesco",pt:ptInfo().name},vars||{});let m=list[Math.floor(Math.random()*list.length)].replace(/\{(\w+)\}/g,(_,k)=>v[k]!=null?v[k]:"");
-  const B=$("#motiv");B.innerHTML=`<div class="av">${avatar(gid,52)}</div><div class="tx"><b>${esc(g.n)}</b><span>${esc(m)}</span></div>`;B.hidden=false;B.classList.remove("in");void B.offsetWidth;B.classList.add("in");
-  lastMotiv=Date.now();clearTimeout(motivTo);motivTo=setTimeout(()=>{B.hidden=true},kind==="pr"||kind==="finish"?7000:5000)}
+async function motivate(kind,vars,force){const P=prefs();if(!P.motiv)return;if(!force&&Date.now()-lastMotiv<15000)return;lastMotiv=Date.now();
+  const pool=motivPool(),who=pool[Math.floor(Math.random()*pool.length)];let name,avHtml,list;
+  if(who.startsWith("f:")){const f=state.friends.find(x=>"f:"+x.id===who);if(!f)return;name=f.name;const u=await friendUrl(f);avHtml=u?frMedia(f,u):avatar("giulia",52);
+    const base=(TMSG[f.tone]||{})[kind]||MSG[kind]||[];const own=(f.msgs||[]).filter(Boolean);list=own.length&&["set","start","rest","hello","exdone"].includes(kind)&&Math.random()<.5?own:base}
+  else{const g=GIRLS[who];name=g.n;avHtml=avatar(who,52);list=MSG[kind]}
+  if(!list||!list.length)return;
+  const v=Object.assign({n:"Francesco",pt:ptInfo().name},vars||{});const m=list[Math.floor(Math.random()*list.length)].replace(/\{(\w+)\}/g,(_,k)=>v[k]!=null?v[k]:"");
+  const big=["pr","finish"].includes(kind);
+  const B=$("#motiv");B.className="motiv"+(big?" big":"");B.innerHTML=`<div class="av">${avHtml}</div><div class="tx"><b>${esc(name)}</b><span>${esc(m)}</span></div>`;B.hidden=false;void B.offsetWidth;B.classList.add("in");
+  clearTimeout(motivTo);motivTo=setTimeout(()=>{B.hidden=true},big?7000:5000)}
 $("#motiv").onclick=()=>{$("#motiv").hidden=true};
 function helloMotiv(){if(LS.get(LSK+"-hello","")===TODAY())return;LS.set(LSK+"-hello",TODAY());
   const a=nextAppt(),tp=todayPlan();let plan_;
@@ -1159,6 +1201,59 @@ function drawFp(conf,note){const O=$("#fpOut"),img=O.querySelector("img");const 
   O.onchange=e=>{const on=e.target.dataset.fpon,g=e.target.dataset.fpg;if(on!=null)fpRes[+on].on=e.target.checked;if(g!=null)fpRes[+g].g=Math.max(0,+e.target.value||0);drawFp(conf,note)};
   $("#fpAdd").onclick=()=>{const sel=fpRes.filter(x=>x.on&&x.g>0);if(!sel.length){toast("Seleziona almeno un alimento");return}sel.forEach((x,i)=>{const s=x.g/x.g0;api.add("foods",{date:TODAY(),m:addMeal,name:x.name,g:Math.round(x.g),k:r1(x.k*s),p:r1(x.p*s),c:r1(x.c*s),f:r1(x.f*s),ts:Date.now()+i,ai:true})});toast("Pasto aggiunto dalla foto");closeSheet()}}
 async function shrinkTo(file,max){const bmp=await createImageBitmap(file),s=Math.min(1,max/Math.max(bmp.width,bmp.height)),c=document.createElement("canvas");c.width=Math.round(bmp.width*s);c.height=Math.round(bmp.height*s);c.getContext("2d").drawImage(bmp,0,0,c.width,c.height);return new Promise(r=>c.toBlob(r,"image/jpeg",.85))}
+
+/* ================= MOTIVATORI PERSONALI ================= */
+function frMedia(f,u,st){st=st||"";return f.kind==="video"?`<video src="${esc(u)}" autoplay muted loop playsinline style="object-fit:cover;${st}"></video>`:`<img src="${esc(u)}" alt="" style="object-fit:cover;${st}">`}
+function loadImg(file){return new Promise((res,rej)=>{const u=URL.createObjectURL(file),im=new Image();im.onload=()=>res(im);im.onerror=()=>rej(new Error("img"));im.src=u})}
+async function squareBlob(file,size){let src,w,h;try{src=await createImageBitmap(file);w=src.width;h=src.height}catch(e){src=await loadImg(file);w=src.naturalWidth;h=src.naturalHeight}
+  if(!w||!h)throw new Error("empty");const m=Math.min(w,h),c=document.createElement("canvas");c.width=c.height=size;c.getContext("2d").drawImage(src,(w-m)/2,(h-m)/2.6,m,m,0,0,size,size);
+  return new Promise((r,j)=>c.toBlob(b=>b?r(b):j(new Error("blob")),"image/jpeg",.86))}
+function videoInfo(file){return new Promise((res,rej)=>{const v=document.createElement("video");v.preload="metadata";v.muted=true;v.onloadedmetadata=()=>res({d:v.duration,w:v.videoWidth});v.onerror=()=>rej(new Error("video"));v.src=URL.createObjectURL(file)})}
+async function prepMedia(file){
+  if(!file)throw {msg:"Nessun file scelto."};
+  const isV=(file.type||"").startsWith("video/")||/\.(mp4|mov|webm|m4v)$/i.test(file.name||"");
+  if(isV){if(file.size>20*1024*1024)throw {msg:"Video troppo pesante (max 20 MB). Accorcialo o riducine la qualità."};
+    let info={};try{info=await Promise.race([videoInfo(file),new Promise(r=>setTimeout(()=>r({}),4000))])}catch(e){info={}}
+    if(info.d&&info.d>30)throw {msg:"Video troppo lungo: massimo 30 secondi."};return{blob:file,kind:"video"}}
+  if(/heic|heif/i.test(file.type||"")||/\.(heic|heif)$/i.test(file.name||"")){try{return{blob:await squareBlob(file,400),kind:"image"}}catch(e){throw {msg:"Le foto HEIC dell'iPhone qui non si aprono: salvala come JPG (o fai uno screenshot) e riprova."}}}
+  try{return{blob:await squareBlob(file,400),kind:"image"}}catch(e){throw {msg:"Foto non leggibile. Usa un file JPG o PNG."}}}
+async function renderFriends(){const L=$("#frList");if(!L)return;const fs=state.friends.slice().sort((a,b)=>(a.ts||0)-(b.ts||0));
+  if(!fs.length){L.innerHTML=`<p class="note" style="margin:0">Aggiungi un amico con la sua foto e i suoi messaggi: comparirà a spronarti durante l'allenamento.</p>`;return}
+  const urls=await Promise.all(fs.map(friendUrl));
+  L.innerHTML=fs.map((f,i)=>`<div class="fr"><div class="ph0">${urls[i]?frMedia(f,urls[i],"width:48px;height:48px;display:block"):""}</div><div><b>${esc(f.name)}</b><div class="note" style="margin:0">${TONES[f.tone]||"Carica"}${(f.msgs||[]).length?` · ${(f.msgs||[]).length} messaggi tuoi`:""}</div></div><div class="row" style="gap:4px"><button class="icb" data-fredit="${f.id}" aria-label="Modifica">${ic("edit")}</button><button class="icb" data-frtest="${f.id}" aria-label="Prova">${ic("play")}</button></div></div>`).join("")}
+function friendSheet(f){f=f||{name:"",tone:"carica",msgs:[]};let blob=null;
+  openSheet(f.id?"Modifica motivatore":"Nuovo motivatore",`<div class="row" style="justify-content:flex-start;gap:14px"><div class="ph0" id="frPrev" style="width:88px;height:88px;border-radius:50%;overflow:hidden;background:var(--surface2);display:flex;align-items:center;justify-content:center;color:var(--ink3);flex:none">${ic("cam",28)}</div><div style="display:flex;flex-direction:column;gap:6px"><button type="button" class="btn ghost" id="frPick">${f.id?"Cambia foto o video":"Scegli foto o video"}</button><span class="note" style="margin:0">JPG, PNG o video fino a 30"</span></div><input type="file" id="frFile" accept="image/*,video/*" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none"></div>
+   <div id="frDrop" style="margin-top:10px;border:2px dashed var(--line);border-radius:14px;padding:14px;text-align:center;color:var(--ink3);font-size:13px">Da PC: trascina qui la foto o il video, oppure incollala con Ctrl+V</div>
+   <div class="fld" style="margin-top:12px"><label for="frName">Nome</label><input id="frName" value="${esc(f.name)}" placeholder="Marco"></div>
+   <div class="fld" style="margin-top:10px"><label>Carattere</label><div class="seg" id="frTone">${Object.entries(TONES).map(([k,l])=>`<button data-t="${k}" aria-pressed="${(f.tone||"carica")===k}">${l}</button>`).join("")}</div></div>
+   <div class="fld" style="margin-top:10px"><label for="frMsgs">I suoi messaggi (uno per riga)</label><textarea id="frMsgs" rows="4" placeholder="Forza {n}, stasera birra solo se chiudi le serie!">${esc((f.msgs||[]).join("\n"))}</textarea></div>
+   <p class="note">Puoi usare {n} per il tuo nome e {pt} per il personal. Il resto dei messaggi viene dal carattere scelto.</p>
+   <p class="note" id="frErr" hidden style="color:var(--bad)"></p>
+   <div class="row" style="margin-top:12px"><button class="btn" id="frSave">Salva</button>${f.id?`<button class="btn line" id="frDel">Elimina</button>`:""}</div>`,async()=>{
+    if(f.id){const u=await friendUrl(f);if(u)$("#frPrev").innerHTML=frMedia(f,u,"width:88px;height:88px")}
+    let tone=f.tone||"carica";$("#frTone").onclick=e=>{const b=e.target.closest("[data-t]");if(!b)return;tone=b.dataset.t;$$("#frTone button").forEach(x=>x.setAttribute("aria-pressed",x===b))};
+    let kind=f.kind||"image";
+    const take=async file=>{$("#frErr").hidden=true;$("#frPrev").innerHTML='<span class="note" style="margin:0">…</span>';
+      try{const r=await prepMedia(file);blob=r.blob;kind=r.kind;$("#frPrev").innerHTML=frMedia({kind},URL.createObjectURL(blob),"width:88px;height:88px")}
+      catch(e){blob=null;$("#frPrev").innerHTML=ic("cam",28);$("#frErr").textContent=(e&&e.msg)||"File non leggibile.";$("#frErr").hidden=false}};
+    $("#frPick").onclick=()=>$("#frFile").click();
+    $("#frFile").onchange=()=>{const file=$("#frFile").files[0];if(file)take(file);$("#frFile").value=""};
+    const dz=$("#frDrop");dz.ondragover=e=>{e.preventDefault();dz.style.borderColor="var(--accent)"};dz.ondragleave=()=>dz.style.borderColor="";
+    dz.ondrop=e=>{e.preventDefault();dz.style.borderColor="";const file=e.dataTransfer&&e.dataTransfer.files[0];if(file)take(file)};
+    const onPaste=e=>{if($("#sheet").hidden||!$("#frDrop")){removeEventListener("paste",onPaste);return}const it_=[...(e.clipboardData&&e.clipboardData.items||[])].find(x=>x.kind==="file");if(it_){e.preventDefault();take(it_.getAsFile())}};
+    addEventListener("paste",onPaste);
+    $("#frName").oninput=()=>$("#frErr").hidden=true;
+    $("#frSave").onclick=async()=>{const name=$("#frName").value.trim();if(!name){$("#frErr").textContent="Scrivi il nome.";$("#frErr").hidden=false;return}
+      if(!f.id&&!blob){$("#frErr").textContent="Scegli una foto o un video.";$("#frErr").hidden=false;return}
+      const o={name,tone,kind:blob?kind:(f.kind||"image"),msgs:$("#frMsgs").value.split("\n").map(x=>x.trim()).filter(Boolean).slice(0,30),ts:f.ts||Date.now()};
+      if(f.assetId)o.assetId=f.assetId;if(f.url)o.url=f.url;if(f.lid)o.lid=f.lid;
+      try{if(blob){if(mode==="db"&&ASSETS){const up=await ASSETS.upload(blob);if(f.assetId)ASSETS.delete(f.assetId).catch(()=>{});o.assetId=up.id;o.url=up.url;delete o.lid}else{const lid="fr"+Date.now().toString(36);await IDB.put(lid,blob);if(f.lid)IDB.del(f.lid);o.lid=lid;delete o.url;delete o.assetId}}}catch(e){toast("Foto non salvata: riprova");return}
+      const id=f.id||("fr"+Date.now().toString(36));delete frPhotoUrl[id];if(o.lid)delete urlCache[o.lid];await api.put("friends",id,o);closeSheet();toast(name+" aggiunto ai motivatori")};
+    if(f.id)$("#frDel").onclick=async()=>{if(!confirm("Eliminare "+f.name+"?"))return;try{if(f.assetId&&ASSETS)await ASSETS.delete(f.assetId);if(f.lid)await IDB.del(f.lid)}catch(e){}if(prefs().girl==="f:"+f.id)savePrefs({girl:"random"});api.del("friends",f.id);closeSheet()}})}
+$("#frAdd").onclick=()=>friendSheet();
+$("#frList").onclick=e=>{const ed=e.target.closest("[data-fredit]"),t=e.target.closest("[data-frtest]");
+  if(ed)friendSheet(state.friends.find(x=>x.id===ed.dataset.fredit));
+  if(t){const P0=prefs().girl;const f=state.friends.find(x=>x.id===t.dataset.frtest);if(!f)return;const keep=motivPool;motivPool=()=>["f:"+f.id];motivate("pr",{ex:"Panca piana"},true).finally(()=>{motivPool=keep})}};
 
 /* ================= DIETA ================= */
 function targets(p,rest){if(!p||!(p.w>0&&p.h>0&&p.age>0))return null;const bmr=10*p.w+6.25*p.h-5*p.age+(p.sex==="f"?-161:5),tdee=bmr*parseFloat(p.act||1.55),k0=tdee*(p.goal==="cut"?.85:p.goal==="bulk"?1.1:1);
@@ -1292,7 +1387,8 @@ $("#photos").onclick=async e=>{const b=e.target.closest("[data-phdel]");if(!b)re
 
 /* ================= ALTRO ================= */
 function renderMore(){$("#coachWrap").hidden=!SAMPLE;const P=prefs();renderPT();$("#sMotiv").checked=!!P.motiv;
-  const gsel=P.girl||"random";$("#girls").innerHTML=`<button data-girl="random" aria-pressed="${gsel==="random"}" aria-label="A rotazione" style="line-height:1"><span style="display:flex;width:52px;height:52px;border-radius:50%;background:var(--surface2);align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--ink2)">Tutte</span></button>`+Object.keys(GIRLS).map(k=>`<button data-girl="${k}" aria-pressed="${gsel===k}" aria-label="${GIRLS[k].n}">${avatar(k,52)}</button>`).join("");
+  const gsel=P.girl||"random";$("#girls").innerHTML=`<button data-girl="random" aria-pressed="${gsel==="random"}" aria-label="A rotazione" style="line-height:1"><span style="display:flex;width:52px;height:52px;border-radius:50%;background:var(--surface2);align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--ink2)">Tutte</span></button>`+Object.keys(GIRLS).map(k=>`<button data-girl="${k}" aria-pressed="${gsel===k}" aria-label="${GIRLS[k].n}">${avatar(k,52)}</button>`).join("");$("#sOnlyFr").checked=!!P.onlyFr;renderFriends();
+  Promise.all(state.friends.map(f=>friendUrl(f).then(u=>[f,u]))).then(list=>{list.forEach(([f,u])=>{if(!u||$(`[data-girl="f:${f.id}"]`))return;$("#girls").insertAdjacentHTML("beforeend",`<button data-girl="f:${f.id}" aria-pressed="${gsel==="f:"+f.id}" aria-label="${esc(f.name)}">${frMedia(f,u,"width:52px;height:52px;border-radius:50%;display:block")}</button>`)})});
   [["sBar","bar"],["sSmith","smith"],["sInc","inc"],["sRest","rest"]].forEach(([id,k])=>{const el=$("#"+id);if(document.activeElement!==el)el.value=P[k]});$("#sSound").checked=!!P.sound;$("#sVib").checked=!!P.vib;$("#sWake").checked=!!P.wake;
   const w=week(),opts=`<option value="">Riposo</option>`+plan().days.map(d=>`<option value="${d.id}">${esc(d.n)}</option>`).join("");
   if(!$("#weekRows").contains(document.activeElement))$("#weekRows").innerHTML=WD.map(x=>`<div class="week"><b>${x[1]}</b><select data-wd="${x[0]}" aria-label="${x[2]}">${opts}</select><input type="time" data-wt="${x[0]}" aria-label="Orario ${x[2]}" value="${esc((w[x[0]]||{}).t||"")}"></div>`).join("");
@@ -1300,7 +1396,7 @@ function renderMore(){$("#coachWrap").hidden=!SAMPLE;const P=prefs();renderPT();
   const standalone=matchMedia("(display-mode: standalone)").matches||navigator.standalone;$("#installCard").hidden=BUILD!=="pwa"||standalone;
   if(BUILD==="pwa"&&!standalone)$("#installTxt").textContent=/iphone|ipad/i.test(navigator.userAgent)?"Su iPhone: tocca Condividi in Safari, poi “Aggiungi alla schermata Home”.":"Tocca Installa, oppure dal menu ⋮ di Chrome scegli “Installa app”.";
 }
-$("#sSave").onclick=()=>{const p={bar:+$("#sBar").value,smith:+$("#sSmith").value,inc:+$("#sInc").value,rest:+$("#sRest").value,sound:$("#sSound").checked,vib:$("#sVib").checked,wake:$("#sWake").checked,motiv:$("#sMotiv").checked};
+$("#sSave").onclick=()=>{const p={bar:+$("#sBar").value,smith:+$("#sSmith").value,inc:+$("#sInc").value,rest:+$("#sRest").value,sound:$("#sSound").checked,vib:$("#sVib").checked,wake:$("#sWake").checked,motiv:$("#sMotiv").checked,onlyFr:$("#sOnlyFr").checked};
   if(!(p.bar>=0&&p.smith>=0&&p.inc>0&&p.rest>=15)){toast("Controlla i valori: recupero minimo 15 secondi");return}savePrefs(p);toast("Impostazioni salvate");if(p.sound)beep(880,.1,.2)};
 function readWeek(){const w={};WD.forEach(x=>{const d=$(`[data-wd="${x[0]}"]`).value,t=$(`[data-wt="${x[0]}"]`).value;if(d)w[x[0]]={d,t}});return w}
 $("#weekSave").onclick=()=>{api.put("settings","week",readWeek());toast("Settimana salvata")};
@@ -1362,7 +1458,7 @@ function syncTxt(){$("#syncTxt").textContent=mode==="db"?"Sincronizzato":mode===
 function goLocal(){mode="local";const saved=LS.get(LSK+"-data",null)||LS.get("hub-data",null);if(saved)COLS.forEach(c=>state[c]=Array.isArray(saved[c])?saved[c]:[]);syncTxt();COLS.forEach(onData);afterLoad()}
 let loaded=false;function afterLoad(){if(loaded)return;loaded=true;helloMotiv();const s=session();if(s&&LS.get(LSK+"-wo-open",false))openWo()}
 addEventListener("pagehide",()=>LS.set(LSK+"-wo-open",!$("#wo").hidden));
-$("#girls").onclick=e=>{const b=e.target.closest("[data-girl]");if(!b)return;savePrefs({girl:b.dataset.girl});$$("#girls button").forEach(x=>x.setAttribute("aria-pressed",x===b));if(b.dataset.girl!=="random"){const pv=prefs().motiv;motivate("set",{},true)}};
+$("#girls").onclick=e=>{const b=e.target.closest("[data-girl]");if(!b)return;savePrefs({girl:b.dataset.girl});$$("#girls button").forEach(x=>x.setAttribute("aria-pressed",x===b));if(b.dataset.girl!=="random"){setTimeout(()=>motivate("set",{},true),50)}};
 const v0=LS.get(LSK+"-view","home");setView(TABS.some(t=>t[0]===v0)?v0:"home");
 if(BUILD==="pwa"||!(window.claude&&window.claude.use))goLocal();
 else use("db").then(d=>{if(!d)return goLocal();DB=d;mode="db";syncTxt();let n=0;
